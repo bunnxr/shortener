@@ -39,7 +39,7 @@ $("#go").onclick = async () => {
     await load();
   } catch (e) { msg(e.message, false); }
 };
-$("#url").onkeydown = (e) => e.key === "Enter" && $("#go").click();
+$("#url").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#go").click(); });
 $("#q").oninput = render;
 
 async function load() {
