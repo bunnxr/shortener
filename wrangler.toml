@@ -10,7 +10,7 @@ directory = "./public"        # serves /links/ (HTML, CSS, JS)
 
 [[kv_namespaces]]
 binding = "LINKS"
-id = "LINKS"
+id = LINKS
 
 # Optional hardening: verify the Cloudflare Access JWT inside the Worker.
 # Team domain looks like "yourteam.cloudflareaccess.com"; AUD is the Access app's Application Audience tag.
