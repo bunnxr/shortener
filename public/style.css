@@ -49,6 +49,9 @@ main{max-width:760px;margin:0 auto;padding:0 20px 70px}
 .body a{font:500 .88rem var(--mono);color:var(--acc);text-decoration:none}
 .body a:hover{text-decoration:underline}
 .dest,.meta{font:400 .78rem var(--mono);color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dest a{color:inherit;text-decoration:none}
+.dest a:hover{color:var(--acc);text-decoration:underline}
+@media(hover:none){.dest a{text-decoration:underline dotted}}
 .acts{display:flex;gap:6px}
 .item .acts button,.ghost{background:transparent;border:1px solid var(--line);border-radius:4px;padding:5px 11px;font:500 .78rem var(--mono)}
 .item .acts button:hover,.ghost:hover{border-color:var(--ink)}
@@ -60,5 +63,24 @@ dialog::backdrop{background:rgba(40,35,25,.4)}
 #qrlabel{margin:12px auto;font:500 .8rem var(--mono);word-break:break-all;max-width:260px}
 dialog .acts{justify-content:center}
 dialog .acts button:first-child{background:var(--ink);color:var(--paper);border:0;border-radius:4px;padding:8px 16px;font:500 .8rem var(--mono)}
-@media(max-width:640px){.sheet{padding:20px 20px 26px}h1{font-size:1.6rem}.grid{grid-template-columns:1fr}.bar{flex-direction:column;align-items:stretch}.bar button{padding:13px}.item{flex-wrap:wrap}.head input{width:140px}}
 @media(prefers-reduced-motion:reduce){.d,.ear{animation:none;stroke-dashoffset:0}.word b{animation:none}}
+@media(max-width:640px){
+  .top{padding:20px 16px 16px}
+  .word{font-size:1.45rem}
+  .sheet{margin:0 12px;padding:16px 18px 24px}
+  .tabs{margin-bottom:20px}
+  h1{font-size:1.55rem;margin-bottom:16px}
+  .bar{flex-direction:column;align-items:stretch;gap:16px}
+  .bar input,label input,.head input,.pre i{font-size:16px}
+  .bar button{padding:14px;font-size:1rem}
+  .grid{grid-template-columns:1fr;gap:18px}
+  main{padding:0 12px 56px}
+  .head{flex-wrap:wrap;margin-top:32px}
+  .head input{width:100%;padding:11px 12px}
+  .item{flex-wrap:wrap;padding:16px}
+  .dest{white-space:normal;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .item .acts{flex:1 1 100%;gap:8px}
+  .item .acts button{flex:1;min-height:42px;font-size:.85rem}
+  dialog{max-width:calc(100vw - 32px);padding:20px}
+  dialog .acts button{min-height:42px}
+}

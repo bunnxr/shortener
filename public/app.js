@@ -58,6 +58,17 @@ function icon(l) {
   return box;
 }
 
+function dest(target) {
+  const d = el("div", "dest");
+  d.append("↳ ");
+  if (/^https?:\/\//i.test(target)) {
+    const a = el("a", "", target);
+    a.href = target; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = target;
+    d.append(a);
+  } else d.append(target);
+  return d;
+}
+
 function render() {
   const q = $("#q").value.toLowerCase();
   const rows = links.filter((l) => (l.slug + " " + l.title + " " + l.target).toLowerCase().includes(q));
@@ -69,7 +80,7 @@ function render() {
     const item = el("div", "item"), body = el("div", "body"), acts = el("div", "acts");
     const a = el("a", "", HOST + "/" + l.slug);
     a.href = shortUrl(l.slug); a.target = "_blank"; a.rel = "noopener";
-    body.append(el("h3", "", l.title || "/" + l.slug), a, el("div", "dest", "↳ " + l.target));
+    body.append(el("h3", "", l.title || "/" + l.slug), a, dest(l.target));
     if (l.created) body.append(el("div", "meta", new Date(l.created).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })));
     const copy = el("button", "", "Copy");
     copy.onclick = () => navigator.clipboard.writeText(shortUrl(l.slug)).then(() => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1200); });
