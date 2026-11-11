@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Links by bunnxr</title>
+<title>CHARLie-link</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,29 +21,37 @@
     <span class="word">bunnxr<b>_</b></span>
   </a>
 </header>
-<section class="sheet">
-  <div class="tabs" role="tablist">
-    <button class="tab on" data-tab="link">short link</button>
-    <button class="tab" data-tab="qr">qr code</button>
-  </div>
-  <h1 id="title">Shorten a long link</h1>
-  <div class="bar">
-    <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Place your long link here" autofocus>
-    <button id="go">Shorten URL</button>
-  </div>
-  <details id="opts" open>
-    <summary>Name and customize</summary>
-    <div class="grid">
-      <label>Link name<input id="name" maxlength="80" placeholder="Game pack"></label>
-      <label>Slug<span class="pre"><i id="host"></i><input id="slug" placeholder="xyz"></span></label>
+<div class="app">
+  <section class="sheet">
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-tab="link">short link</button>
+      <button class="tab" data-tab="qr">qr code</button>
     </div>
-  </details>
-  <div id="msg" role="status"></div>
-</section>
-<main>
-  <div class="head"><h2>Your links <small id="count"></small></h2><input id="q" type="search" placeholder="Search links"></div>
-  <div id="list"></div>
-</main>
+    <h1 id="title">Shorten a long link</h1>
+    <div class="bar">
+      <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Place your long link here" autofocus>
+      <button id="go">Shorten URL</button>
+    </div>
+    <details id="opts" open>
+      <summary>Name and customize</summary>
+      <div class="grid">
+        <label>Link name<input id="name" maxlength="80" placeholder="Game pack"></label>
+        <label>Back-half<span class="pre"><i id="host"></i><input id="slug" placeholder="00games"></span></label>
+        <label>Folder<select id="folder"><option value="">Home (no folder)</option></select></label>
+      </div>
+    </details>
+    <div id="msg" role="status"></div>
+  </section>
+  <section class="fm">
+    <div class="fmbar">
+      <nav class="crumbs" id="crumbs"></nav>
+      <input id="q" type="search" placeholder="Search all links">
+    </div>
+    <form id="nf"><input id="nfn" maxlength="40" placeholder="New folder name" autocomplete="off"><button>Create folder</button></form>
+    <div id="folders" class="folders"></div>
+    <div id="list"></div>
+  </section>
+</div>
 <dialog id="qrd">
   <div id="qrbox"></div>
   <p id="qrlabel"></p>
