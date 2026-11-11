@@ -1,10 +1,10 @@
 const $ = (s) => document.querySelector(s);
-let tab = "link", links = [];
-$("#host").textContent = location.host + "/";
+let tab = "link", links = [], HOST = location.host;
+$("#host").textContent = HOST + "/";
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
 const msg = (t, ok) => { const m = $("#msg"); m.textContent = t; m.className = ok ? "ok" : "err"; };
-const shortUrl = (slug) => location.origin + "/" + slug;
+const shortUrl = (slug) => "https://" + HOST + "/" + slug;
 
 async function api(path, opt) {
   const r = await fetch("/_api/" + path, opt);
@@ -67,17 +67,17 @@ function render() {
   if (!rows.length) box.append(el("div", "empty", links.length ? "No links match your search." : "No links yet. Paste one above to create your first."));
   rows.forEach((l) => {
     const item = el("div", "item"), body = el("div", "body"), acts = el("div", "acts");
-    const a = el("a", "", location.host + "/" + l.slug);
+    const a = el("a", "", HOST + "/" + l.slug);
     a.href = shortUrl(l.slug); a.target = "_blank"; a.rel = "noopener";
     body.append(el("h3", "", l.title || "/" + l.slug), a, el("div", "dest", "↳ " + l.target));
     if (l.created) body.append(el("div", "meta", new Date(l.created).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })));
     const copy = el("button", "", "Copy");
     copy.onclick = () => navigator.clipboard.writeText(shortUrl(l.slug)).then(() => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1200); });
     const qr = el("button", "", "QR");
-    qr.onclick = () => showQR(shortUrl(l.slug), l.title || location.host + "/" + l.slug);
+    qr.onclick = () => showQR(shortUrl(l.slug), l.title || HOST + "/" + l.slug);
     const del = el("button", "del", "Delete");
     del.onclick = async () => {
-      if (!confirm("Delete " + location.host + "/" + l.slug + "?")) return;
+      if (!confirm("Delete " + HOST + "/" + l.slug + "?")) return;
       try { await api("delete?slug=" + encodeURIComponent(l.slug), { method: "DELETE" }); await load(); } catch (e) { msg(e.message, false); }
     };
     acts.append(copy, qr, del);
@@ -104,4 +104,4 @@ $("#qrdl").onclick = () => {
 };
 $("#qrx").onclick = () => $("#qrd").close();
 
-load();
+api("config").then((c) => { HOST = c.host; $("#host").textContent = HOST + "/"; }).catch(() => {}).then(load);
