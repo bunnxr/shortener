@@ -3,10 +3,21 @@ main = "src/index.js"
 compatibility_date = "2026-11-01"
 workers_dev = false           # keep the workers.dev URL off so Access can't be bypassed
 
-routes = [{ pattern = "bunnxr.com/*", zone_name = "bunnxr.com" }]
+routes = [
+  { pattern = "bunnxr.com/*", zone_name = "bunnxr.com" },
+  { pattern = "links.bunnxr.com", custom_domain = true },
+]
 
 [assets]
-directory = "./public"        # serves /links/ (HTML, CSS, JS)
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+ADMIN_HOST = "links.bunnxr.com"
+SHORT_HOST = "bunnxr.com"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
 
 [observability.logs]
 enabled = true
