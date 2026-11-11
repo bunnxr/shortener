@@ -21,13 +21,13 @@ async function api(request, env, url) {
       return json({ error: "Enter a valid link starting with http:// or https://" }, 400);
     }
     const slug = String(b.slug || "").trim().toLowerCase() || rand();
-    if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(slug)) return json({ error: "Slug: letters, numbers, - and _ only" }, 400);
-    if (RESERVED.has(slug)) return json({ error: "That slug is reserved" }, 400);
-    if ((await env.LINKS.get(slug)) !== null) return json({ error: "That slug is already taken" }, 409);
+    if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(slug)) return json({ error: "Back-half: letters, numbers, - and _ only" }, 400);
+    if (RESERVED.has(slug)) return json({ error: "That back-half is reserved" }, 400);
+    if ((await env.LINKS.get(slug)) !== null) return json({ error: "That back-half is already taken" }, 409);
     const meta = { title: String(b.title || "").trim().slice(0, 80), created: Date.now() };
     if (target.length < 700) meta.target = target; // KV metadata is capped at 1 KB
     await env.LINKS.put(slug, target, { metadata: meta });
-    return json({ ok: true, slug, short: "https://" + (env.SHORT_HOST || url.host) + "/" + slug });
+    return json({ ok: true, slug, link: { slug, title: meta.title, created: meta.created, target }, short: "https://" + (env.SHORT_HOST || url.host) + "/" + slug });
   }
 
   if (p === "/_api/list" && m === "GET") {

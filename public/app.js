@@ -36,14 +36,33 @@ $("#go").onclick = async () => {
     navigator.clipboard?.writeText(d.short).catch(() => {});
     msg("Created and copied: " + d.short, true);
     ["#url", "#name", "#slug"].forEach((s) => ($(s).value = ""));
-    await load();
+    remember("add", d.link);
+    links = merge(links);
+    render();
   } catch (e) { msg(e.message, false); }
 };
 $("#url").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#go").click(); });
 $("#q").oninput = render;
 
+// KV listings can lag by up to a minute, so changes made here are remembered briefly and merged in.
+const TTL = 120000;
+function recent() {
+  try { return JSON.parse(sessionStorage.getItem("recent") || "[]").filter((x) => Date.now() - x.t < TTL); } catch { return []; }
+}
+function remember(type, v) {
+  try { sessionStorage.setItem("recent", JSON.stringify([...recent(), { type, v, t: Date.now() }])); } catch {}
+}
+function merge(list) {
+  let out = list;
+  for (const r of recent()) {
+    if (r.type === "add" && !out.some((x) => x.slug === r.v.slug)) out = [r.v, ...out];
+    if (r.type === "del") out = out.filter((x) => x.slug !== r.v);
+  }
+  return [...out].sort((a, b) => b.created - a.created);
+}
+
 async function load() {
-  try { links = await api("list"); render(); } catch (e) { msg(e.message, false); }
+  try { links = merge(await api("list")); render(); } catch (e) { msg(e.message, false); }
 }
 
 function icon(l) {
@@ -89,7 +108,7 @@ function render() {
     const del = el("button", "del", "Delete");
     del.onclick = async () => {
       if (!confirm("Delete " + HOST + "/" + l.slug + "?")) return;
-      try { await api("delete?slug=" + encodeURIComponent(l.slug), { method: "DELETE" }); await load(); } catch (e) { msg(e.message, false); }
+      try { await api("delete?slug=" + encodeURIComponent(l.slug), { method: "DELETE" }); remember("del", l.slug); links = merge(links.filter((x) => x.slug !== l.slug)); render(); } catch (e) { msg(e.message, false); }
     };
     acts.append(copy, qr, del);
     item.append(icon(l), body, acts);
