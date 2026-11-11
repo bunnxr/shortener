@@ -15,7 +15,7 @@ run_worker_first = true
 
 [[kv_namespaces]]
 binding = "LINKS"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "d714e0bc1f154df5b8a8faa753193f85"
 
 [vars]
 ADMIN_HOST = "links.bunnxr.com"
