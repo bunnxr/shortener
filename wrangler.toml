@@ -1,0 +1,19 @@
+name = "shortener"            # must match your existing Worker's name
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false           # keep the workers.dev URL off so Access can't be bypassed
+
+routes = [{ pattern = "bunnxr.com/*", zone_name = "bunnxr.com" }]
+
+[assets]
+directory = "./public"        # serves /links/ (HTML, CSS, JS)
+
+[[kv_namespaces]]
+binding = "LINKS"
+id = "PASTE_YOUR_KV_NAMESPACE_ID"
+
+# Optional hardening: verify the Cloudflare Access JWT inside the Worker.
+# Team domain looks like "yourteam.cloudflareaccess.com"; AUD is the Access app's Application Audience tag.
+[vars]
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
