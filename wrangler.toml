@@ -8,6 +8,10 @@ routes = [{ pattern = "bunnxr.com/*", zone_name = "bunnxr.com" }]
 [assets]
 directory = "./public"        # serves /links/ (HTML, CSS, JS)
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 [[kv_namespaces]]
 binding = "LINKS"
 id = "d714e0bc1f154df5b8a8faa753193f85"
