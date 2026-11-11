@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Links · bunnxr.com</title>
+<link rel="stylesheet" href="/links/style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="brand">bunnxr<span>.com</span></div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab on" data-tab="link">Short Link</button>
+      <button class="tab" data-tab="qr">QR Code</button>
+    </div>
+    <div class="panel">
+      <h1 id="title">Shorten a long link</h1>
+      <div class="bar">
+        <input id="url" type="url" placeholder="Place your long link here" autofocus>
+        <button id="go">Shorten URL</button>
+      </div>
+      <details id="opts">
+        <summary>Name and customize your link</summary>
+        <div class="grid">
+          <label>Link name<input id="name" maxlength="80" placeholder="Game pack"></label>
+          <label>Back-half<span class="pre"><i id="host"></i><input id="slug" placeholder="00games"></span></label>
+        </div>
+      </details>
+      <div id="msg" role="status"></div>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="head"><h2>Your links <small id="count"></small></h2><input id="q" type="search" placeholder="Search links"></div>
+  <div id="list"></div>
+</main>
+<dialog id="qrd">
+  <div id="qrbox"></div>
+  <p id="qrlabel"></p>
+  <div class="acts"><button id="qrdl">Download PNG</button><button id="qrx" class="ghost">Close</button></div>
+</dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/links/app.js"></script>
+</body>
+</html>

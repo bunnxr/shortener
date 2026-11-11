@@ -1,0 +1,55 @@
+:root{--navy:#0a1f44;--cream:#fffdf8;--blue:#0b5bd3;--blue-d:#0948a8;--bg:#f3f5fa;--ink:#1b2333;--mute:#667088;--line:#e3e7f0;--bad:#c0392b;--good:#14804a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #7aa7f7;outline-offset:2px}
+.hero{background:var(--navy);padding:28px 20px 56px}
+.brand{max-width:860px;margin:0 auto 28px;color:#fff;font-weight:800;font-size:1.35rem;letter-spacing:-.02em}
+.brand span{color:#7aa7f7;font-weight:600}
+.card{max-width:860px;margin:0 auto}
+.tabs{display:flex;gap:8px;padding-left:20px}
+.tab{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);border-bottom:0;border-radius:14px 14px 0 0;padding:11px 22px;font-weight:700}
+.tab.on{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.panel{background:var(--cream);border-radius:22px;padding:34px 36px 28px}
+h1{margin:0 0 18px;font-size:2rem;line-height:1.15;letter-spacing:-.02em}
+.bar{display:flex}
+.bar input{flex:1;min-width:0;padding:15px 18px;border:1px solid #8b93a5;border-right:0;border-radius:10px 0 0 10px;background:#fff}
+.bar button{background:var(--blue);color:#fff;border:0;border-radius:0 10px 10px 0;padding:0 30px;font-weight:800}
+.bar button:hover{background:var(--blue-d)}
+details{margin-top:14px}
+summary{cursor:pointer;font-weight:700;color:var(--blue);width:max-content}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+label{font-size:.85rem;font-weight:600;color:var(--mute)}
+label input{display:block;width:100%;margin-top:4px;padding:11px 12px;border:1px solid #b9bfcd;border-radius:8px;background:#fff;color:var(--ink);font-weight:400}
+.pre{display:flex;align-items:center;margin-top:4px;border:1px solid #b9bfcd;border-radius:8px;background:#fff;padding-left:12px}
+.pre i{font-style:normal;color:var(--mute);font-weight:400;white-space:nowrap}
+.pre input{border:0;margin:0;padding-left:2px}
+#msg{min-height:1.5rem;margin-top:12px;font-weight:600;word-break:break-all}
+#msg.ok{color:var(--good)} #msg.err{color:var(--bad)}
+main{max-width:860px;margin:-20px auto 60px;padding:0 20px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:48px 0 14px}
+.head h2{margin:0;font-size:1.3rem}
+.head small{color:var(--mute);font-weight:400}
+.head input{width:240px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.item{display:flex;gap:14px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:12px}
+.ico{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;font-weight:800;color:var(--blue);overflow:hidden}
+.ico img{width:26px;height:26px}
+.body{flex:1;min-width:0}
+.body h3{margin:0;font-size:1.1rem}
+.body a{color:var(--blue);font-weight:600;text-decoration:none}
+.body a:hover{text-decoration:underline}
+.dest,.meta{color:var(--mute);font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acts{display:flex;gap:8px}
+.item .acts button,.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px;font-weight:600}
+.item .acts button:hover,.ghost:hover{background:var(--bg)}
+.item .acts .del:hover{color:var(--bad);border-color:var(--bad)}
+.empty{text-align:center;color:var(--mute);padding:40px 0}
+dialog{border:0;border-radius:18px;padding:26px;text-align:center;box-shadow:0 20px 60px rgba(10,31,68,.35)}
+dialog::backdrop{background:rgba(10,31,68,.55)}
+#qrbox{display:inline-block;padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px}
+#qrlabel{margin:12px 0;font-weight:600;word-break:break-all;max-width:260px}
+dialog .acts{justify-content:center}
+dialog .acts button:first-child{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:9px 18px;font-weight:700}
+@media(max-width:640px){.panel{padding:24px 18px}h1{font-size:1.5rem}.grid{grid-template-columns:1fr}.bar{flex-direction:column;gap:10px}.bar input,.bar button{border:1px solid #8b93a5;border-radius:10px;padding:14px}.bar button{border:0}.item{flex-wrap:wrap}.head input{width:140px}}
+@media(prefers-reduced-motion:no-preference){.item{animation:in .25s ease-out}@keyframes in{from{opacity:0;transform:translateY(4px)}}}
