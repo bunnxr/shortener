@@ -23,9 +23,9 @@ async function api(request, env, url) {
       return json({ error: "Enter a valid link starting with http:// or https://" }, 400);
     }
     const slug = String(b.slug || "").trim().toLowerCase() || rand();
-    if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(slug)) return json({ error: "Slug: letters, numbers, - and _ only" }, 400);
-    if (RESERVED.has(slug)) return json({ error: "That slug is reserved" }, 400);
-    if ((await env.LINKS.get(slug)) !== null) return json({ error: "That slug is already taken" }, 409);
+    if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(slug)) return json({ error: "Back-half: letters, numbers, - and _ only" }, 400);
+    if (RESERVED.has(slug)) return json({ error: "That back-half is reserved" }, 400);
+    if ((await env.LINKS.get(slug)) !== null) return json({ error: "That back-half is already taken" }, 409);
     const folder = String(b.folder || "");
     if (folder && !(await getFolders(env)).includes(folder)) return json({ error: "Folder not found" }, 400);
     const meta = { title: String(b.title || "").trim().slice(0, 80), created: Date.now(), folder };
@@ -95,10 +95,22 @@ export default {
     }
 
     // Every other host (bunnxr.com): redirects only. No UI, no API.
-    const slug = url.pathname.slice(1).toLowerCase();
+    // /slug, /slug?x=1 and /slug/extra/path all resolve to the stored link.
+    const m = url.pathname.slice(1).match(/^([^/]+)(\/.*)?$/);
+    const slug = m ? m[1].toLowerCase() : "";
     if (slug && !slug.startsWith("_")) {
-      const target = await env.LINKS.get(slug);
-      if (target) return Response.redirect(target, 302);
+      const stored = await env.LINKS.get(slug);
+      if (stored) {
+        try {
+          const t = new URL(stored);
+          const rest = (m[2] || "").replace(/^\/+$/, "");
+          if (rest) t.pathname = t.pathname.replace(/\/$/, "") + rest; // append extra path
+          if (url.search) t.search = t.search ? t.search + "&" + url.search.slice(1) : url.search; // keep extra query
+          return new Response(null, { status: 302, headers: { Location: t.href } });
+        } catch {
+          return Response.redirect(stored, 302);
+        }
+      }
     }
     return new Response("Not found", { status: 404 });
   },
