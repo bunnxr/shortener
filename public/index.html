@@ -57,6 +57,23 @@
   <p id="qrlabel"></p>
   <div class="acts"><button id="qrdl">Download PNG</button><button id="qrx" class="ghost">Close</button></div>
 </dialog>
+<dialog id="r2d" class="r2d">
+  <h2>New file link</h2>
+  <div id="r2pick">
+    <nav class="crumbs" id="r2crumbs"></nav>
+    <div id="r2files" class="r2files"></div>
+  </div>
+  <div id="r2form" hidden>
+    <p class="r2chosen"><span>File</span><b id="r2file"></b><button id="r2change" class="ghost small" type="button">Change</button></p>
+    <div class="grid">
+      <label>Address<span class="pre"><i id="r2host"></i><input id="r2name" placeholder="leave empty to use the file name" autocomplete="off" spellcheck="false"></span></label>
+      <label id="r2typel">Link type<select id="r2type"><option value="view">Open in the browser</option><option value="download">Download</option></select></label>
+      <label>Works for<select id="r2valid"><option value="3600">1 hour</option><option value="86400">1 day</option><option value="604800" selected>7 days</option><option value="2592000">30 days</option><option value="7776000">90 days</option><option value="0">Never expires</option></select></label>
+    </div>
+    <p id="r2msg" class="r2msg"></p>
+  </div>
+  <div class="acts"><button id="r2create" type="button" hidden>Create link</button><button id="r2x" class="ghost" type="button">Close</button></div>
+</dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="/app.js"></script>
 </body>

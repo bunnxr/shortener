@@ -8,11 +8,40 @@ const putFolders = (env, f) => env.LINKS.put("_folders", JSON.stringify(f));
 const rand = (n = 6) =>
   Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
 
+// ---------------------------------------------------------------------
+//  R2 files folder: passes these calls on to the r2-files Worker through the FILES
+//  service binding. Nothing is copied: r2-files owns the file links, this only shows
+//  and edits them. r2-files checks a shared token, kept here in KV under
+//  "_r2files_token" (names starting with "_" are never short links), which r2-files
+//  reads through its own binding to this namespace. It is created on first use.
+// ---------------------------------------------------------------------
+const R2_ROUTES = new Set(["GET config", "GET links", "GET list", "POST link-add", "POST link-update", "POST link-delete"]);
+async function r2Token(env) {
+  let t = await env.LINKS.get("_r2files_token");
+  if (!t) {
+    t = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, "0")).join("");
+    await env.LINKS.put("_r2files_token", t);
+  }
+  return t;
+}
+async function r2(request, env, url) {
+  if (!env.FILES) return json({ error: "The FILES service binding to r2-files is missing." }, 500);
+  const route = url.pathname.slice("/_api/r2/".length);
+  if (!R2_ROUTES.has(request.method + " " + route)) return json({ error: "Not found" }, 404);
+  const init = { method: request.method, headers: { "x-internal-token": await r2Token(env) } };
+  if (request.method === "POST") { init.body = await request.text(); init.headers["content-type"] = "application/json"; }
+  const res = await env.FILES.fetch(new Request("https://r2-files.internal/" + route + url.search, init));
+  return new Response(res.body, { status: res.status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
+}
+
 async function api(request, env, url) {
   if (!(await verifyAccess(request, env))) return json({ error: "Unauthorized" }, 401);
   const p = url.pathname, m = request.method;
 
-  if (p === "/_api/config" && m === "GET") return json({ host: env.SHORT_HOST || url.host });
+  if (p === "/_api/config" && m === "GET") return json({ host: env.SHORT_HOST || url.host, r2: !!env.FILES });
+
+  // "R2 files" folder: file links that live in the r2-files Worker, managed from here.
+  if (p.startsWith("/_api/r2/")) return r2(request, env, url);
 
   if (p === "/_api/add" && m === "POST") {
     const b = await request.json().catch(() => ({}));

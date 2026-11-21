@@ -112,3 +112,32 @@ label select{display:block;width:100%;margin-top:4px;border:0;border-bottom:1px 
 .mv{border:1px solid var(--line);border-radius:4px;background:transparent;padding:5px 6px;font:500 .78rem var(--mono);max-width:110px}
 @media(max-width:860px){.app{grid-template-columns:1fr;gap:16px;padding:0 12px 56px}.app .sheet{position:static}}
 @media(max-width:640px){label select,#nfn,#q,.mv{font-size:16px}.fmbar input{width:100%}.item .acts .mv{flex:1;max-width:none;min-height:42px}.folders{padding:12px 12px 4px}#nf{padding:12px}.fmbar{padding:12px}}
+
+/* ---- R2 files folder (live view of the r2-files Worker's file links) ---- */
+.folder.r2tile{border-style:dashed}
+.folder.r2tile svg{color:#c2410c}
+.ico.ext{font:700 .62rem var(--mono);letter-spacing:.02em;color:#c2410c}
+.item.broken .ico{opacity:.5}
+.meta.bad{color:var(--bad)}
+.r2d{width:min(560px,calc(100vw - 32px));text-align:left}
+.r2d h2{margin:0 0 14px;font:700 1.25rem var(--umono)}
+.r2d .crumbs{margin-bottom:10px;font-size:.82rem}
+.r2files{max-height:min(50vh,360px);overflow:auto;border:1px solid var(--line);border-radius:6px}
+.r2row{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;font:400 .85rem var(--mono)}
+.r2row:last-child{border-bottom:0}
+.r2row:hover{background:#f3f1ea}
+.r2row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r2row small{color:var(--mute);font-size:.72rem;white-space:nowrap}
+.r2row.dir svg{flex:none;width:18px;height:18px;color:var(--acc)}
+.r2files .empty{padding:24px 0}
+.r2chosen{display:flex;align-items:center;gap:10px;margin:0 0 6px;font:400 .82rem var(--mono)}
+.r2chosen span{color:var(--mute)}
+.r2chosen b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.r2msg{min-height:1.3rem;margin:14px 0 0;font:500 .8rem var(--mono);word-break:break-all}
+.r2msg.ok{color:var(--acc)}.r2msg.err{color:var(--bad)}
+.r2d .acts{justify-content:flex-end;margin-top:16px}
+.r2d .acts button{background:transparent;border:1px solid var(--line);border-radius:4px;padding:8px 16px;font:500 .8rem var(--mono)}
+.r2d .acts #r2create{background:var(--ink);color:var(--paper);border:0}
+.r2d .acts #r2create:hover{background:var(--acc)}
+.item .acts{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:640px){.r2d .acts button{flex:1;min-height:42px}}
