@@ -112,6 +112,10 @@ export default {
         }
       }
     }
+    // Not a short link of ours: let the r2-files Worker try it as a file link (bunnxr.com/gta6.mp4).
+    // FILES is a service binding (wrangler.toml), so this stays inside Cloudflare and the request,
+    // including Range headers for video seeking, is passed on unchanged.
+    if (env.FILES && m && !m[2] && (request.method === "GET" || request.method === "HEAD")) return env.FILES.fetch(request);
     return new Response("Not found", { status: 404 });
   },
 };

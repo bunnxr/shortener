@@ -21,6 +21,11 @@ invocation_logs = true
 binding = "LINKS"
 id = "d714e0bc1f154df5b8a8faa753193f85"
 
+# Names that are not short links here are handed to the r2-files Worker (file links like bunnxr.com/gta6.mp4)
+[[services]]
+binding = "FILES"
+service = "r2-files"
+
 [vars]
 ADMIN_HOST = "links.bunnxr.com"
 SHORT_HOST = "bunnxr.com"
