@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
 <title>Links by bunnxr</title>
-<script>(function(d){d.theme="dark";d.icons="on";try{d.theme=sessionStorage.getItem("theme")||"dark";d.icons=localStorage.getItem("icons")||"on"}catch(e){}})(document.documentElement.dataset)</script>
+<script>(function(d){d.theme="dark";d.icons="on";try{d.theme=localStorage.getItem("theme")||"dark";d.icons=localStorage.getItem("icons")||"on"}catch(e){}})(document.documentElement.dataset)</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='2.5%202%2035%2035'%20fill='none'%20stroke='%230f766e'%20stroke-width='3.4'%20stroke-linecap='round'%3E%3Cstyle%3E@media%20(prefers-color-scheme:dark)%7Bsvg%7Bstroke:%234fd1bf%7D%7D.e%7Btransform-box:fill-box;transform-origin:50%25%20100%25;animation:t%207s%202.5s%20infinite%7D@keyframes%20t%7B0%25,90%25,100%25%7Btransform:rotate(0)%7D93%25%7Btransform:rotate(11deg)%7D96%25%7Btransform:rotate(-4deg)%7D%7D%3C/style%3E%3Cpath%20d='M15%2024C9%2014%2011%203%2016%204C20%205%2019%2015%2019%2024'/%3E%3Cpath%20class='e'%20d='M25%2024C31%2014%2029%203%2024%204C20%205%2021%2015%2021%2024'/%3E%3Crect%20x='9'%20y='24'%20width='22'%20height='11'%20rx='5.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,6 +72,7 @@
 <dialog id="r2d" class="r2d">
   <h2>New file link</h2>
   <div id="r2pick">
+    <div id="r2drives" class="seg r2seg" role="group" aria-label="Drive" hidden></div>
     <nav class="crumbs" id="r2crumbs"></nav>
     <div id="r2files" class="r2files"></div>
   </div>

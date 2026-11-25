@@ -155,6 +155,8 @@ select option{background:var(--paper);color:var(--ink)}
 .r2d{width:min(560px,calc(100vw - 32px));text-align:left}
 .r2d h2{margin:0 0 14px;font:700 1.25rem var(--umono)}
 .r2d .crumbs{margin-bottom:10px;font-size:.82rem}
+.r2seg{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr;margin-bottom:12px}
+.r2seg button{display:flex;align-items:center;justify-content:center;gap:6px}
 .r2files{max-height:min(50vh,360px);overflow:auto;border:1px solid var(--line);border-radius:6px}
 .r2row{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;font:400 .85rem var(--mono)}
 .r2row:last-child{border-bottom:0}

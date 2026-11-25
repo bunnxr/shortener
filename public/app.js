@@ -41,7 +41,13 @@ const ibtn = (cls, icon, label) => { const b = el("button", cls); b.innerHTML = 
 
 // R2 files folder (file links owned by the r2-files Worker)
 const R2ID = "\u0001r2"; // folder id that can never clash with a real folder name
-const R2 = { on: false, links: [], loading: false, error: "", seq: 0 };
+const R2 = { on: false, links: [], loading: false, error: "", seq: 0, drives: [] };
+// r2-files' other drives (Zenith): [{ id, label, root }], from /_api/r2/config. A file path that starts
+// with a drive's root ("zenith:/…") is on that drive; every other path is in R2.
+const SERVER = '<rect x="3.5" y="6" width="17" height="12" rx="3"/><path d="M3.5 13.5h17M11 15.9h5.5"/><circle class="f" cx="7.2" cy="15.9" r="1"/><path d="M7.5 9.6h9"/>';
+const driveFor = (k) => R2.drives.find((d) => k.startsWith(d.root));
+const driveName = (k) => { const d = driveFor(k); return d ? d.label : "R2"; };
+const where = (k) => { const d = driveFor(k); return d ? d.label + ": " + k.slice(d.root.length) : "R2: " + k; };
 // Files a browser can open by itself (same list as VIEW_MIME in r2-files/src/util.js)
 const VIEW_EXT = " pdf jpg jpeg png gif webp avif svg bmp ico mp4 m4v webm mov ogv mp3 m4a aac wav ogg opus flac txt md log csv srt vtt json xml html htm ";
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
@@ -67,11 +73,11 @@ $("#logo").onclick = () => showSheet($("#sheet").hidden, true);
 try { showSheet(localStorage.getItem("sheet") === "1"); } catch { showSheet(false); }
 
 // ---- Settings menu (gear, top right) ----
-// theme: OLED black by default; a switch to light lasts for this browser session (sessionStorage).
-// icons: show or hide every icon on the site (the logo and the gear stay); remembered (localStorage).
+// theme: OLED black by default. icons: show or hide every icon on the site (the logo and the gear stay).
+// Both are saved permanently in this browser (localStorage) until changed here again.
 // The <head> sets both on <html> before the page paints, so nothing flashes.
 const SET = {
-  theme: { store: () => sessionStorage, def: "dark" },
+  theme: { store: () => localStorage, def: "dark" },
   icons: { store: () => localStorage, def: "on" },
 };
 function applySettings() {
@@ -245,7 +251,7 @@ function r2Item(l, showWhere) {
   icoBox.innerHTML = tile(PAGE + (MARK[kindOf(file)] || MARK.file), 18);
   const a = el("a", "", r2Url(l).replace(/^https?:\/\//, ""));
   a.href = r2Url(l); a.target = "_blank"; a.rel = "noopener";
-  body.append(el("h3", "", file), a, dest(l.key ? "R2: " + l.key + (l.size ? " · " + fmtSize(l.size) : "") : "R2: no file"));
+  body.append(el("h3", "", file), a, dest(l.key ? where(l.key) + (l.size ? " · " + fmtSize(l.size) : "") : "No file"));
   const tags = [validity(l), l.mode === "view" ? "opens in browser" : l.mode === "download" ? "downloads" : "", showWhere ? "in R2 files" : ""].filter(Boolean);
   const meta = el("div", "meta" + (l.missing ? " bad" : ""), tags.join("  ·  "));
   if (l.exp) meta.title = new Date(l.exp * 1000).toLocaleString();
@@ -262,7 +268,7 @@ function r2Item(l, showWhere) {
   };
   const del = ibtn("del", "trash", "Delete");
   del.onclick = async () => {
-    if (!confirm("Delete " + r2Url(l).replace(/^https?:\/\//, "") + "?\nThe file itself stays in R2.")) return;
+    if (!confirm("Delete " + r2Url(l).replace(/^https?:\/\//, "") + "?\nThe file itself stays in " + (l.key ? driveName(l.key) : "R2") + ".")) return;
     try { await post("r2/link-delete", { name: l.name }); R2.links = R2.links.filter((x) => x !== l); render(); msg("Link deleted.", true); } catch (e) { msg(e.message, false); }
   };
   acts.append(copy, qr, ren, del);
@@ -293,17 +299,33 @@ function copyBtn(url) {
   return b;
 }
 
-// New file link: browse the bucket, pick a file, then address, type and validity.
+// New file link: pick the drive (R2 or Zenith), browse it, pick a file, then address, type and validity.
 const R2D = { dir: "", key: "" };
+function r2Drives(root) { // the R2 / Zenith switch, shown only when r2-files has another drive
+  const box = $("#r2drives");
+  box.hidden = !R2.drives.length;
+  box.textContent = "";
+  [{ label: "R2", root: "", icon: CLOUD }, ...R2.drives.map((d) => ({ label: d.label, root: d.root, icon: SERVER }))].forEach((d) => {
+    const b = el("button");
+    b.type = "button";
+    b.innerHTML = inkIcon(d.icon, 16);
+    b.append(el("span", "", d.label));
+    b.setAttribute("aria-pressed", String(d.root === root));
+    b.onclick = () => { if (d.root !== root) r2Browse(d.root); };
+    box.append(b);
+  });
+}
 async function r2Browse(dir) {
   R2D.dir = dir;
+  const drive = driveFor(dir), root = drive ? drive.root : "";
+  r2Drives(root);
   const cr = $("#r2crumbs");
   cr.textContent = "";
-  const top = el("button", "crumb" + (dir ? "" : " here"), "bucket");
-  top.onclick = () => r2Browse("");
+  const top = el("button", "crumb" + (dir === root ? " here" : ""), drive ? drive.label : "R2 bucket");
+  top.onclick = () => r2Browse(root);
   cr.append(top);
-  let acc = "";
-  dir.split("/").filter(Boolean).forEach((p, i, arr) => {
+  let acc = root;
+  dir.slice(root.length).split("/").filter(Boolean).forEach((p, i, arr) => {
     acc += p + "/";
     const to = acc, b = el("button", "crumb" + (i === arr.length - 1 ? " here" : ""), p);
     b.onclick = () => r2Browse(to);
@@ -323,7 +345,7 @@ async function r2Browse(dir) {
 }
 function r2Pick(key) {
   R2D.key = key;
-  $("#r2file").textContent = key;
+  $("#r2file").textContent = where(key);
   $("#r2pick").hidden = true; $("#r2form").hidden = false; $("#r2create").hidden = false;
   $("#r2typel").hidden = !canView(key);
   $("#r2type").value = "view"; $("#r2name").value = ""; $("#r2msg").textContent = ""; $("#r2msg").className = "r2msg";
@@ -470,4 +492,10 @@ $("#qrdl").onclick = () => {
 };
 $("#qrx").onclick = () => $("#qrd").close();
 
-api("config").then((c) => { HOST = c.host; $("#host").textContent = HOST + "/"; R2.on = !!c.r2; }).catch(() => {}).then(() => { load(); if (R2.on) loadR2(); });
+api("config").then((c) => { HOST = c.host; $("#host").textContent = HOST + "/"; R2.on = !!c.r2; }).catch(() => {}).then(() => {
+  load();
+  if (!R2.on) return;
+  loadR2();
+  // which other drives (Zenith) r2-files can link files from; without it the picker shows R2 only
+  api("r2/config").then((d) => { R2.drives = Array.isArray(d.drives) ? d.drives.filter((x) => x && x.root && x.label) : []; render(); }).catch(() => {});
+});
