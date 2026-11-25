@@ -12,24 +12,24 @@
 </head>
 <body>
 <header class="top">
-  <a class="logo" href="/" aria-label="bunnxr links">
+  <button class="logo" id="logo" type="button" aria-controls="sheet" aria-expanded="false" title="Show the link shortener">
     <svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
       <path class="d" pathLength="1" d="M15 24C9 14 11 3 16 4C20 5 19 15 19 24"/>
       <path class="d ear" pathLength="1" d="M25 24C31 14 29 3 24 4C20 5 21 15 21 24"/>
       <rect class="d" pathLength="1" x="9" y="24" width="22" height="11" rx="5.5"/>
     </svg>
     <span class="word">bunnxr<b>_</b></span>
-  </a>
+  </button>
 </header>
-<div class="app">
-  <section class="sheet">
+<div class="app solo" id="app">
+  <section class="sheet" id="sheet" hidden>
     <div class="tabs" role="tablist">
       <button class="tab on" data-tab="link">short link</button>
       <button class="tab" data-tab="qr">qr code</button>
     </div>
     <h1 id="title">Shorten a long link</h1>
     <div class="bar">
-      <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Place your long link here" autofocus>
+      <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Place your long link here">
       <button id="go">Shorten URL</button>
     </div>
     <details id="opts" open>
@@ -47,6 +47,7 @@
       <nav class="crumbs" id="crumbs"></nav>
       <input id="q" type="search" placeholder="Search all links">
     </div>
+    <div id="fmsg" role="status"></div>
     <form id="nf"><input id="nfn" maxlength="40" placeholder="New folder name" autocomplete="off"><button>Create folder</button></form>
     <div id="folders" class="folders"></div>
     <div id="list"></div>

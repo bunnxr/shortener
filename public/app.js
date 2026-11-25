@@ -10,7 +10,26 @@ const CLOUD = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" strok
 // Files a browser can open by itself (same list as VIEW_MIME in r2-files/src/util.js)
 const VIEW_EXT = " pdf jpg jpeg png gif webp avif svg bmp ico mp4 m4v webm mov ogv mp3 m4a aac wav ogg opus flac txt md log csv srt vtt json xml html htm ";
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
-const msg = (t, ok) => { const m = $("#msg"); m.textContent = t; m.className = ok ? "ok" : "err"; };
+// Status goes to the shortener when it is open, otherwise to the links panel so it stays visible.
+const msg = (t, ok) => {
+  const open = !$("#sheet").hidden, m = $(open ? "#msg" : "#fmsg");
+  $(open ? "#fmsg" : "#msg").textContent = "";
+  m.textContent = t; m.className = ok ? "ok" : "err";
+};
+
+// Clicking the "bunnxr_" title shows or hides the shortener; the choice is remembered.
+function showSheet(on, focus) {
+  $("#sheet").hidden = !on;
+  $("#app").classList.toggle("solo", !on);
+  const logo = $("#logo");
+  logo.setAttribute("aria-expanded", String(on));
+  logo.title = on ? "Hide the link shortener" : "Show the link shortener";
+  try { localStorage.setItem("sheet", on ? "1" : ""); } catch {}
+  $("#fmsg").textContent = "";
+  if (on && focus) $("#url").focus();
+}
+$("#logo").onclick = () => showSheet($("#sheet").hidden, true);
+try { showSheet(localStorage.getItem("sheet") === "1"); } catch { showSheet(false); }
 const shortUrl = (slug) => "https://" + HOST + "/" + slug;
 
 async function api(path, opt) {
