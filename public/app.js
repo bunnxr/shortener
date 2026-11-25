@@ -13,8 +13,6 @@ const P = {
   retry: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
   qr: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><path d="M14 14h2.5M14 14v2.5M20 14v6M14 20h6M17 17h.01"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
 };
 const ico = (n, s) => '<svg class="i" width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[n] + '</svg>';
 // File and folder icons: one ink, 1.8 stroke, solid details (class "f"), in a 38px tile like r2-files.
@@ -54,7 +52,7 @@ const msg = (t, ok) => {
   m.textContent = t; m.className = ok ? "ok" : "err";
 };
 
-// Clicking the "bunnxr_" title shows or hides the shortener; the choice is remembered.
+// Clicking the "bunnxr" title shows or hides the shortener; the choice is remembered.
 function showSheet(on, focus) {
   $("#sheet").hidden = !on;
   $("#app").classList.toggle("solo", !on);
@@ -68,22 +66,48 @@ function showSheet(on, focus) {
 $("#logo").onclick = () => showSheet($("#sheet").hidden, true);
 try { showSheet(localStorage.getItem("sheet") === "1"); } catch { showSheet(false); }
 
-// Theme: OLED black by default. A switch to light lasts for this browser session only (sessionStorage).
-// The <head> sets data-theme before the page paints, so there is no flash of the wrong theme.
-function setTheme(t) {
-  document.documentElement.dataset.theme = t;
-  const dark = t !== "light", b = $("#theme");
-  b.innerHTML = ico(dark ? "sun" : "moon", 20);
-  b.title = dark ? "Switch to the light theme" : "Switch to the dark theme";
-  b.setAttribute("aria-label", b.title);
-  document.querySelector('meta[name="theme-color"]').content = dark ? "#000000" : "#fbf8f3";
-}
-$("#theme").onclick = () => {
-  const t = document.documentElement.dataset.theme === "light" ? "dark" : "light";
-  try { sessionStorage.setItem("theme", t); } catch {}
-  setTheme(t);
+// ---- Settings menu (gear, top right) ----
+// theme: OLED black by default; a switch to light lasts for this browser session (sessionStorage).
+// icons: show or hide every icon on the site (the logo and the gear stay); remembered (localStorage).
+// The <head> sets both on <html> before the page paints, so nothing flashes.
+const SET = {
+  theme: { store: () => sessionStorage, def: "dark" },
+  icons: { store: () => localStorage, def: "on" },
 };
-setTheme(document.documentElement.dataset.theme || "dark");
+function applySettings() {
+  const ds = document.documentElement.dataset;
+  document.querySelector('meta[name="theme-color"]').content = ds.theme === "light" ? "#fbf8f3" : "#000000";
+  document.querySelectorAll("#setMenu [data-set]").forEach((b) => b.setAttribute("aria-pressed", String((ds[b.dataset.set] || SET[b.dataset.set].def) === b.dataset.val)));
+}
+document.querySelectorAll("#setMenu [data-set]").forEach((b) => (b.onclick = () => {
+  const k = b.dataset.set;
+  document.documentElement.dataset[k] = b.dataset.val;
+  try { SET[k].store().setItem(k, b.dataset.val); } catch {}
+  applySettings();
+}));
+function setMenu(on) {
+  $("#setMenu").hidden = !on;
+  $("#setBtn").setAttribute("aria-expanded", String(on));
+}
+$("#setBtn").onclick = () => setMenu($("#setMenu").hidden);
+document.addEventListener("mousedown", (e) => { if (!$("#setMenu").hidden && !e.target.closest(".set")) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#setMenu").hidden) { setMenu(false); $("#setBtn").focus(); } });
+applySettings();
+
+// Tab icon: the same bunny as r2-files. Chrome and Edge do not play animations inside tab icons, so the
+// ear twitch is played here by swapping the icon frame by frame (0° → 11° → -4° → 0° over 0.7 s, every 3 s).
+(function tabBunny() {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  const icon = (a) => "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='2.5 2 35 35' fill='none' stroke='" + (dark.matches ? "#4fd1bf" : "#0f766e") + "' stroke-width='3.4' stroke-linecap='round'><path d='M15 24C9 14 11 3 16 4C20 5 19 15 19 24'/><path transform='rotate(" + a + " 25.2 24)' d='M25 24C31 14 29 3 24 4C20 5 21 15 21 24'/><rect x='9' y='24' width='22' height='11' rx='5.5'/></svg>");
+  const keys = [[0, 0], [210, 11], [420, -4], [700, 0]]; // [ms, degrees]
+  const angle = (t) => { for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) { const [t0, a0] = keys[i - 1], [t1, a1] = keys[i]; return a0 + (a1 - a0) * (t - t0) / (t1 - t0); } return 0; };
+  const twitch = () => { const start = performance.now(); const tick = () => { const t = performance.now() - start; link.href = icon(angle(t).toFixed(1)); if (t < 700) setTimeout(tick, 40); }; tick(); };
+  link.href = icon(0);
+  dark.addEventListener("change", () => { link.href = icon(0); });
+  setTimeout(function loop() { twitch(); setTimeout(loop, 3000); }, 1000);
+})();
 const shortUrl = (slug) => "https://" + HOST + "/" + slug;
 
 async function api(path, opt) {
