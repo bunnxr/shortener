@@ -1,12 +1,49 @@
 const $ = (s) => document.querySelector(s);
 let tab = "link", HOST = location.host, cur = "", data = { links: [], folders: [] };
 $("#host").textContent = HOST + "/";
-const FOLDER = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+// ---- icons: the same set and sizes as the r2-files app (r2-files/public/app.js) ----
+// UI icons: 24-unit outlines, 1.75 stroke.
+const P = {
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+  edit: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  folderPlus: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  retry: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  qr: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><path d="M14 14h2.5M14 14v2.5M20 14v6M14 20h6M17 17h.01"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+};
+const ico = (n, s) => '<svg class="i" width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[n] + '</svg>';
+// File and folder icons: one ink, 1.8 stroke, solid details (class "f"), in a 38px tile like r2-files.
+const PAGE = '<path d="M14.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14.5 3v4.5H19"/>';
+const MARK = {
+  image: '<circle class="f" cx="9.6" cy="11.6" r="1.25"/><path class="f" d="M7.8 18 10.6 14.4l1.9 2.2 1.5-1.7 2.2 3.1z"/>',
+  video: '<path class="f" d="M10 11.2v6.2a.6.6 0 0 0 .9.5l4.9-3.1a.6.6 0 0 0 0-1l-4.9-3.1a.6.6 0 0 0-.9.5z"/>',
+  audio: '<circle class="f" cx="10" cy="16.6" r="1.6"/><path d="M11.6 16.6v-5.8l3.6-1v2"/>',
+  pdf: '<rect class="f" x="7.5" y="12.6" width="9" height="4.8" rx="1.2"/><path d="M8.5 9.8h3.5"/>',
+  doc: '<path d="M8.5 11.5h7M8.5 14.5h7M8.5 17.5h4"/>',
+  archive: '<path class="f" d="M10.7 3.8h1.5v1.5h-1.5zM12.2 5.3h1.5v1.5h-1.5zM10.7 6.8h1.5v1.5h-1.5zM12.2 8.3h1.5v1.5h-1.5z"/><rect x="10.4" y="11" width="3.2" height="4.4" rx="1"/><path d="M12 13.4v.4"/>',
+  code: '<path d="m10 12-2.2 2.4 2.2 2.4M14 12l2.2 2.4-2.2 2.4"/>',
+  sheet: '<rect x="7.8" y="11" width="8.4" height="7" rx="1.2"/><path d="M7.8 14.5h8.4M12 11v7"/>',
+  file: '<circle class="f" cx="9.4" cy="14.6" r="1"/><circle class="f" cx="12" cy="14.6" r="1"/><circle class="f" cx="14.6" cy="14.6" r="1"/>',
+};
+const FOLDER = '<path d="M3.5 7a2 2 0 0 1 2-2h3.6a2 2 0 0 1 1.4.6l1.4 1.4h6.6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10h17"/><rect class="f" x="6" y="12.6" width="4" height="1.8" rx=".9"/>';
+const CLOUD = '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><circle class="f" cx="12" cy="15" r="1"/>';
+const EXT = { image: "jpg jpeg png gif webp avif svg bmp heic heif ico tif tiff", video: "mp4 mov m4v webm mkv avi wmv ogv", audio: "mp3 wav flac aac m4a ogg opus", pdf: "pdf", archive: "zip rar 7z tar gz tgz bz2 xz", code: "js ts jsx tsx json html htm css py rb go rs java c cpp h php sh sql yml yaml xml md", sheet: "xls xlsx csv tsv ods numbers", doc: "doc docx odt rtf txt pages ppt pptx key log srt vtt" };
+const kindOf = (name) => { const e = name.includes(".") ? name.split(".").pop().toLowerCase() : ""; for (const k in EXT) if (e && (" " + EXT[k] + " ").includes(" " + e + " ")) return k; return "file"; };
+const inkIcon = (body, s) => '<svg class="i ink" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+const fileIcon = (name, s) => inkIcon(PAGE + (MARK[kindOf(name)] || MARK.file), s);
+// a 38px tile holding an ink icon: s 20 → 27px icon (folders), s 18 → 24px (link rows), as in r2-files
+const tile = (body, s) => '<span class="tile">' + inkIcon(body, Math.round(s * 1.35)) + '</span>';
+// a button with an icon and a label
+const ibtn = (cls, icon, label) => { const b = el("button", cls); b.innerHTML = ico(icon, 15); b.append(el("span", "", label)); return b; };
 
 // R2 files folder (file links owned by the r2-files Worker)
 const R2ID = "\u0001r2"; // folder id that can never clash with a real folder name
 const R2 = { on: false, links: [], loading: false, error: "", seq: 0 };
-const CLOUD = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
 // Files a browser can open by itself (same list as VIEW_MIME in r2-files/src/util.js)
 const VIEW_EXT = " pdf jpg jpeg png gif webp avif svg bmp ico mp4 m4v webm mov ogv mp3 m4a aac wav ogg opus flac txt md log csv srt vtt json xml html htm ";
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
@@ -30,6 +67,23 @@ function showSheet(on, focus) {
 }
 $("#logo").onclick = () => showSheet($("#sheet").hidden, true);
 try { showSheet(localStorage.getItem("sheet") === "1"); } catch { showSheet(false); }
+
+// Theme: OLED black by default. A switch to light lasts for this browser session only (sessionStorage).
+// The <head> sets data-theme before the page paints, so there is no flash of the wrong theme.
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  const dark = t !== "light", b = $("#theme");
+  b.innerHTML = ico(dark ? "sun" : "moon", 20);
+  b.title = dark ? "Switch to the light theme" : "Switch to the dark theme";
+  b.setAttribute("aria-label", b.title);
+  document.querySelector('meta[name="theme-color"]').content = dark ? "#000000" : "#fbf8f3";
+}
+$("#theme").onclick = () => {
+  const t = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  try { sessionStorage.setItem("theme", t); } catch {}
+  setTheme(t);
+};
+setTheme(document.documentElement.dataset.theme || "dark");
 const shortUrl = (slug) => "https://" + HOST + "/" + slug;
 
 async function api(path, opt) {
@@ -98,15 +152,16 @@ $("#nf").onsubmit = async (e) => {
   try { const d = await post("folder", { name }); $("#nfn").value = ""; commit("fadd", d.name); } catch (err) { msg(err.message, false); }
 };
 
+// The site's favicon in a 38px tile (24px, the size of the file icons); a globe when there is none.
 function icon(l) {
-  const box = el("div", "ico"), letter = (l.title || l.slug)[0].toUpperCase();
+  const box = el("span", "tile"), globe = () => { box.innerHTML = inkIcon(P.globe, 24); };
   try {
     const img = el("img");
     img.alt = "";
     img.src = "https://www.google.com/s2/favicons?sz=64&domain=" + new URL(l.target).hostname;
-    img.onerror = () => { img.remove(); box.textContent = letter; };
+    img.onerror = globe;
     box.append(img);
-  } catch { box.textContent = letter; }
+  } catch { globe(); }
   return box;
 }
 
@@ -162,8 +217,8 @@ async function r2Update(l, body, ok) {
 function r2Item(l, showWhere) {
   const item = el("div", "item r2" + (l.missing ? " broken" : "")), body = el("div", "body"), acts = el("div", "acts");
   const file = l.key ? l.key.split("/").pop() : l.name;
-  const ext = file.includes(".") ? file.split(".").pop().slice(0, 4).toUpperCase() : "FILE";
-  const ico = el("div", "ico ext", ext);
+  const icoBox = el("span");
+  icoBox.innerHTML = tile(PAGE + (MARK[kindOf(file)] || MARK.file), 18);
   const a = el("a", "", r2Url(l).replace(/^https?:\/\//, ""));
   a.href = r2Url(l); a.target = "_blank"; a.rel = "noopener";
   body.append(el("h3", "", file), a, dest(l.key ? "R2: " + l.key + (l.size ? " · " + fmtSize(l.size) : "") : "R2: no file"));
@@ -172,17 +227,16 @@ function r2Item(l, showWhere) {
   if (l.exp) meta.title = new Date(l.exp * 1000).toLocaleString();
   body.append(meta);
 
-  const copy = el("button", "", "Copy");
-  copy.onclick = () => navigator.clipboard.writeText(r2Url(l)).then(() => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1200); });
-  const qr = el("button", "", "QR");
+  const copy = copyBtn(() => r2Url(l));
+  const qr = ibtn("", "qr", "QR");
   qr.onclick = () => showQR(r2Url(l), file);
-  const ren = el("button", "", "Rename");
+  const ren = ibtn("", "edit", "Rename");
   ren.onclick = async () => {
     const v = prompt("New address. The old one stops working.\n" + HOST + "/", l.name);
     if (!v || v.trim() === l.name) return;
     await r2Update(l, { newName: v.trim() }, "Address changed.");
   };
-  const del = el("button", "del", "Delete");
+  const del = ibtn("del", "trash", "Delete");
   del.onclick = async () => {
     if (!confirm("Delete " + r2Url(l).replace(/^https?:\/\//, "") + "?\nThe file itself stays in R2.")) return;
     try { await post("r2/link-delete", { name: l.name }); R2.links = R2.links.filter((x) => x !== l); render(); msg("Link deleted.", true); } catch (e) { msg(e.message, false); }
@@ -206,8 +260,13 @@ function r2Item(l, showWhere) {
     ty.onchange = () => r2Update(l, { mode: ty.value }, ty.value === "view" ? "The link now opens in the browser." : "The link now downloads the file.");
     acts.append(ty);
   }
-  item.append(ico, body, acts);
+  item.append(icoBox.firstChild, body, acts);
   return item;
+}
+function copyBtn(url) {
+  const b = ibtn("", "copy", "Copy"), label = b.querySelector("span");
+  b.onclick = () => navigator.clipboard.writeText(url()).then(() => { label.textContent = "Copied"; setTimeout(() => (label.textContent = "Copy"), 1200); });
+  return b;
 }
 
 // New file link: browse the bucket, pick a file, then address, type and validity.
@@ -233,8 +292,8 @@ async function r2Browse(dir) {
     const d = await api("r2/list?prefix=" + encodeURIComponent(dir));
     if (R2D.dir !== dir) return;
     box.textContent = "";
-    d.folders.forEach((f) => { const b = el("button", "r2row dir"); b.innerHTML = FOLDER; b.append(el("span", "", f.slice(dir.length).replace(/\/$/, ""))); b.onclick = () => r2Browse(f); box.append(b); });
-    d.files.forEach((f) => { const b = el("button", "r2row"); b.append(el("span", "", f.key.slice(dir.length)), el("small", "", fmtSize(f.size))); b.onclick = () => r2Pick(f.key); box.append(b); });
+    d.folders.forEach((f) => { const b = el("button", "r2row dir"); b.innerHTML = inkIcon(FOLDER, 22); b.append(el("span", "", f.slice(dir.length).replace(/\/$/, ""))); b.onclick = () => r2Browse(f); box.append(b); });
+    d.files.forEach((f) => { const b = el("button", "r2row"); b.innerHTML = fileIcon(f.key, 22); b.append(el("span", "", f.key.slice(dir.length)), el("small", "", fmtSize(f.size))); b.onclick = () => r2Pick(f.key); box.append(b); });
     if (!d.folders.length && !d.files.length) box.append(el("div", "empty", "This folder is empty."));
   } catch (e) { box.textContent = ""; box.append(el("div", "empty", e.message)); }
 }
@@ -290,12 +349,12 @@ function render() {
   home.onclick = () => open("");
   cr.append(home);
   if (inR2) {
-    const add = el("button", "ghost small", "New file link"), re = el("button", "ghost small", "Refresh");
+    const add = ibtn("ghost small", "plus", "New file link"), re = ibtn("ghost small", "retry", "Refresh");
     add.onclick = () => r2Create();
     re.onclick = () => loadR2();
     cr.append(el("span", "sep", "/"), el("span", "crumb here", "R2 files"), add, re);
   } else if (cur) {
-    const del = el("button", "ghost small", "Delete folder");
+    const del = ibtn("ghost small", "trash", "Delete folder");
     del.onclick = async () => {
       if (!confirm("Delete the folder " + cur + "?")) return;
       try { await api("folder?name=" + encodeURIComponent(cur), { method: "DELETE" }); const gone = cur; commit("fdel", gone); } catch (e) { msg(e.message, false); }
@@ -311,14 +370,14 @@ function render() {
   fb.hidden = !!cur || !!q || (!folders.length && !R2.on);
   if (R2.on) { // the live folder of file links from r2-files, always first
     const b = el("button", "folder r2tile");
-    b.innerHTML = CLOUD;
+    b.innerHTML = tile(CLOUD, 20);
     b.append(el("span", "fname", "R2 files"), el("small", "", R2.loading && !R2.links.length ? "loading…" : R2.error ? "unavailable" : R2.links.length + (R2.links.length === 1 ? " link" : " links")));
     b.onclick = () => open(R2ID);
     fb.append(b);
   }
   folders.forEach((f) => {
     const n = links.filter((l) => l.folder === f).length, b = el("button", "folder");
-    b.innerHTML = FOLDER;
+    b.innerHTML = tile(FOLDER, 20);
     b.append(el("span", "fname", f), el("small", "", n + (n === 1 ? " link" : " links")));
     b.onclick = () => open(f);
     fb.append(b);
@@ -345,11 +404,10 @@ function render() {
     const when = l.created ? new Date(l.created).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
     const meta = [when, q && l.folder ? "in " + l.folder : ""].filter(Boolean).join("  ");
     if (meta) body.append(el("div", "meta", meta));
-    const copy = el("button", "", "Copy");
-    copy.onclick = () => navigator.clipboard.writeText(shortUrl(l.slug)).then(() => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1200); });
-    const qr = el("button", "", "QR");
+    const copy = copyBtn(() => shortUrl(l.slug));
+    const qr = ibtn("", "qr", "QR");
     qr.onclick = () => showQR(shortUrl(l.slug), l.title || HOST + "/" + l.slug);
-    const del = el("button", "del", "Delete");
+    const del = ibtn("del", "trash", "Delete");
     del.onclick = async () => {
       if (!confirm("Delete " + HOST + "/" + l.slug + "?")) return;
       try { await api("delete?slug=" + encodeURIComponent(l.slug), { method: "DELETE" }); commit("del", l.slug); } catch (e) { msg(e.message, false); }

@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
 <title>Links by bunnxr</title>
+<script>try{document.documentElement.dataset.theme=sessionStorage.getItem("theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,13 +15,14 @@
 <body>
 <header class="top">
   <button class="logo" id="logo" type="button" aria-controls="sheet" aria-expanded="false" title="Show the link shortener">
-    <svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+    <svg viewBox="0 0 40 40" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
       <path class="d" pathLength="1" d="M15 24C9 14 11 3 16 4C20 5 19 15 19 24"/>
       <path class="d ear" pathLength="1" d="M25 24C31 14 29 3 24 4C20 5 21 15 21 24"/>
       <rect class="d" pathLength="1" x="9" y="24" width="22" height="11" rx="5.5"/>
     </svg>
     <span class="word">bunnxr<b>_</b></span>
   </button>
+  <button class="ib" id="theme" type="button"></button>
 </header>
 <div class="app solo" id="app">
   <section class="sheet" id="sheet" hidden>
@@ -45,10 +48,10 @@
   <section class="fm">
     <div class="fmbar">
       <nav class="crumbs" id="crumbs"></nav>
-      <input id="q" type="search" placeholder="Search all links">
+      <label class="search"><svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search all links" aria-label="Search all links"></label>
     </div>
     <div id="fmsg" role="status"></div>
-    <form id="nf"><input id="nfn" maxlength="40" placeholder="New folder name" autocomplete="off"><button>Create folder</button></form>
+    <form id="nf"><input id="nfn" maxlength="40" placeholder="New folder name" autocomplete="off"><button><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/></svg>Create folder</button></form>
     <div id="folders" class="folders"></div>
     <div id="list"></div>
   </section>
