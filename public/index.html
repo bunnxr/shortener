@@ -51,24 +51,36 @@
         <label>Folder<select id="folder"><option value="">Home (no folder)</option></select></label>
       </div>
     </details>
-    <div id="msg" role="status"></div>
   </section>
   <section class="fm">
     <div class="fmbar">
       <nav class="crumbs" id="crumbs"></nav>
       <label class="search"><svg class="i" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search all links" aria-label="Search all links"></label>
     </div>
-    <div id="fmsg" role="status"></div>
     <form id="nf"><input id="nfn" maxlength="40" placeholder="New folder name" autocomplete="off"><button><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/></svg>Create folder</button></form>
     <div id="folders" class="folders"></div>
     <div id="list"></div>
   </section>
 </div>
 <dialog id="qrd">
+  <div class="seg qrseg" role="group" aria-label="QR style"><button type="button" data-qr="styled">Styled</button><button type="button" data-qr="plain">Plain</button></div>
   <div id="qrbox"></div>
   <p id="qrlabel"></p>
   <div class="acts"><button id="qrdl">Download PNG</button><button id="qrx" class="ghost">Close</button></div>
 </dialog>
+<dialog id="edd" class="r2d">
+  <form id="edf">
+    <h2>Edit link</h2>
+    <div class="grid">
+      <label>Link name<input id="edname" maxlength="80" placeholder="Game pack" autocomplete="off"></label>
+      <label>Destination<input id="edtarget" type="url" inputmode="url" autocomplete="off" spellcheck="false" required></label>
+      <label>Address<span class="pre"><i id="edhost"></i><input id="edslug" maxlength="64" autocomplete="off" spellcheck="false"></span></label>
+    </div>
+    <p class="r2note">Changing the address moves the link. The old address stops working.</p>
+    <div class="acts"><button type="submit" class="pri">Save</button><button id="edx" class="ghost" type="button">Cancel</button></div>
+  </form>
+</dialog>
+<div id="toasts" popover="manual" aria-live="polite"></div>
 <dialog id="r2d" class="r2d">
   <h2>New file link</h2>
   <div id="r2pick">
@@ -83,7 +95,6 @@
       <label id="r2typel">Link type<select id="r2type"><option value="view">Open in the browser</option><option value="download">Download</option></select></label>
       <label>Works for<select id="r2valid"><option value="3600">1 hour</option><option value="86400">1 day</option><option value="604800" selected>7 days</option><option value="2592000">30 days</option><option value="7776000">90 days</option><option value="0">Never expires</option></select></label>
     </div>
-    <p id="r2msg" class="r2msg"></p>
   </div>
   <div class="acts"><button id="r2create" type="button" hidden>Create link</button><button id="r2x" class="ghost" type="button">Close</button></div>
 </dialog>

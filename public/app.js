@@ -51,12 +51,20 @@ const where = (k) => { const d = driveFor(k); return d ? d.label + ": " + k.slic
 // Files a browser can open by itself (same list as VIEW_MIME in r2-files/src/util.js)
 const VIEW_EXT = " pdf jpg jpeg png gif webp avif svg bmp ico mp4 m4v webm mov ogv mp3 m4a aac wav ogg opus flac txt md log csv srt vtt json xml html htm ";
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
-// Status goes to the shortener when it is open, otherwise to the links panel so it stays visible.
-const msg = (t, ok) => {
-  const open = !$("#sheet").hidden, m = $(open ? "#msg" : "#fmsg");
-  $(open ? "#fmsg" : "#msg").textContent = "";
-  m.textContent = t; m.className = ok ? "ok" : "err";
-};
+// Messages pop up as toasts, like r2-files: bottom centre (top on phones), gone after 3.5 s (errors 6 s).
+// #toasts is a manual popover, so it sits in the top layer and shows above open dialogs too; it is
+// re-raised for every toast in case a dialog opened after it.
+function toast(text, type) {
+  const box = $("#toasts"), t = el("div", "toast " + (type || "info"), text);
+  box.append(t);
+  if (box.showPopover) { try { if (box.matches(":popover-open")) box.hidePopover(); box.showPopover(); } catch {} }
+  requestAnimationFrame(() => t.classList.add("in"));
+  setTimeout(() => {
+    t.classList.remove("in");
+    setTimeout(() => { t.remove(); if (!box.children.length && box.hidePopover) try { box.hidePopover(); } catch {} }, 260);
+  }, type === "err" ? 6000 : 3500);
+}
+const msg = (t, ok) => { if (t) toast(t, ok ? "ok" : "err"); };
 
 // Clicking the "bunnxr" title shows or hides the shortener; the choice is remembered.
 function showSheet(on, focus) {
@@ -66,7 +74,6 @@ function showSheet(on, focus) {
   logo.setAttribute("aria-expanded", String(on));
   logo.title = on ? "Hide the link shortener" : "Show the link shortener";
   try { localStorage.setItem("sheet", on ? "1" : ""); } catch {}
-  $("#fmsg").textContent = "";
   if (on && focus) $("#url").focus();
 }
 $("#logo").onclick = () => showSheet($("#sheet").hidden, true);
@@ -135,6 +142,7 @@ function merge(d) {
     if (type === "add" && !L.some((x) => x.slug === v.slug)) L = [v, ...L];
     if (type === "del") L = L.filter((x) => x.slug !== v);
     if (type === "move") L = L.map((x) => (x.slug === v.slug ? { ...x, folder: v.folder } : x));
+    if (type === "edit") { const old = L.find((x) => x.slug === v.from); L = [{ ...v.link, folder: old ? old.folder : v.link.folder }, ...L.filter((x) => x.slug !== v.from && x.slug !== v.link.slug)]; }
     if (type === "fadd" && !F.includes(v)) F = [...F, v];
     if (type === "fdel") F = F.filter((x) => x !== v);
   }
@@ -157,7 +165,6 @@ document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => {
   $("#title").textContent = qr ? "Generate a QR code" : "Shorten a long link";
   $("#go").textContent = qr ? "Generate QR" : "Shorten URL";
   $("#opts").hidden = qr;
-  msg("");
 }));
 
 $("#go").onclick = async () => {
@@ -348,7 +355,7 @@ function r2Pick(key) {
   $("#r2file").textContent = where(key);
   $("#r2pick").hidden = true; $("#r2form").hidden = false; $("#r2create").hidden = false;
   $("#r2typel").hidden = !canView(key);
-  $("#r2type").value = "view"; $("#r2name").value = ""; $("#r2msg").textContent = ""; $("#r2msg").className = "r2msg";
+  $("#r2type").value = "view"; $("#r2name").value = "";
   $("#r2name").focus();
 }
 function r2Create() {
@@ -360,15 +367,40 @@ function r2Create() {
 $("#r2change").onclick = () => { $("#r2pick").hidden = false; $("#r2form").hidden = true; $("#r2create").hidden = true; r2Browse(R2D.dir); };
 $("#r2x").onclick = () => $("#r2d").close();
 $("#r2create").onclick = async () => {
-  const s = +$("#r2valid").value, m = $("#r2msg");
+  const s = +$("#r2valid").value;
   try {
     const r = await post("r2/link-add", { key: R2D.key, name: $("#r2name").value.trim(), exp: s ? Math.floor(Date.now() / 1000) + s : 0, mode: canView(R2D.key) ? $("#r2type").value : "" });
     R2.links = [r, ...R2.links.filter((x) => x.name !== r.name)];
     render();
     navigator.clipboard?.writeText(r.url).catch(() => {});
-    m.textContent = "Created and copied: " + r.url; m.className = "r2msg ok";
+    msg("Created and copied: " + r.url, true);
     $("#r2name").value = "";
-  } catch (e) { m.textContent = e.message; m.className = "r2msg err"; }
+  } catch (e) { msg(e.message, false); }
+};
+
+// ---- Edit a short link: name, destination and address (the old address stops working) ----
+let editing = null;
+function editLink(l) {
+  editing = l;
+  $("#edhost").textContent = HOST + "/";
+  $("#edname").value = l.title || "";
+  $("#edtarget").value = l.target || "";
+  $("#edslug").value = l.slug;
+  $("#edd").showModal();
+  $("#edtarget").focus();
+}
+$("#edx").onclick = () => $("#edd").close();
+$("#edf").onsubmit = async (e) => {
+  e.preventDefault();
+  const l = editing;
+  if (!l) return;
+  const body = { slug: l.slug, title: $("#edname").value, target: $("#edtarget").value.trim(), newSlug: $("#edslug").value.trim() || l.slug };
+  try {
+    const d = await post("edit", body);
+    $("#edd").close();
+    commit("edit", { from: l.slug, link: d.link });
+    msg(d.link.slug !== l.slug ? "Saved. The link is now " + d.short + " (the old address no longer works)." : "Saved.", true);
+  } catch (err) { msg(err.message, false); }
 };
 
 async function moveTo(l, folder) {
@@ -453,12 +485,14 @@ function render() {
     const copy = copyBtn(() => shortUrl(l.slug));
     const qr = ibtn("", "qr", "QR");
     qr.onclick = () => showQR(shortUrl(l.slug), l.title || HOST + "/" + l.slug);
+    const ed = ibtn("", "edit", "Edit");
+    ed.onclick = () => editLink(l);
     const del = ibtn("del", "trash", "Delete");
     del.onclick = async () => {
       if (!confirm("Delete " + HOST + "/" + l.slug + "?")) return;
       try { await api("delete?slug=" + encodeURIComponent(l.slug), { method: "DELETE" }); commit("del", l.slug); } catch (e) { msg(e.message, false); }
     };
-    acts.append(copy, qr, del);
+    acts.append(copy, qr, ed, del);
     if (l.folder || folders.length) {
       const mv = el("select", "mv");
       mv.setAttribute("aria-label", "Move to folder");
@@ -474,21 +508,81 @@ function render() {
   });
 }
 
-function showQR(text, label) {
+// ---- QR codes: "styled" (round dots, teal rounded eyes, the bunny in the middle) or "plain" ----
+// The choice is remembered. Styled uses error correction H (30%), so the logo hole (about 5% of the
+// modules) still scans; it is drawn from the qrcodejs matrix, with plain as the fallback.
+const QR = { text: "", label: "", style: "styled" };
+try { QR.style = localStorage.getItem("qrstyle") === "plain" ? "plain" : "styled"; } catch {}
+const BUNNY = ["M15 24C9 14 11 3 16 4C20 5 19 15 19 24", "M25 24C31 14 29 3 24 4C20 5 21 15 21 24", "M14.5 24H25.5A5.5 5.5 0 0 1 25.5 35H14.5A5.5 5.5 0 0 1 14.5 24Z"];
+function rrect(x, a, b, w, h, r) {
+  x.beginPath(); x.moveTo(a + r, b);
+  x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r);
+  x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath();
+}
+function styledQR(text, px) {
+  let m;
+  try { m = new QRCode(document.createElement("div"), { text, width: 64, height: 64, correctLevel: QRCode.CorrectLevel.H })._oQRCode; } catch { return null; }
+  if (!m || !m.getModuleCount) return null; // qrcodejs keeps the matrix here: getModuleCount(), isDark(row, col)
+  const n = m.getModuleCount(), quiet = 4, cs = px / (n + quiet * 2);
+  const c = document.createElement("canvas"), x = c.getContext("2d");
+  c.width = c.height = px;
+  x.fillStyle = "#fff"; x.fillRect(0, 0, px, px);
+  const ink = "#1c1f1d", acc = "#0f766e";
+  let hole = Math.round(n * 0.22); if ((n - hole) % 2) hole++; // centred, whole modules
+  const h0 = (n - hole) / 2, h1 = h0 + hole;
+  const eyeAt = (r, k) => (r < 7 && k < 7) || (r < 7 && k >= n - 7) || (r >= n - 7 && k < 7);
+  x.fillStyle = ink;
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) {
+    if (!m.isDark(r, k) || eyeAt(r, k) || (r >= h0 && r < h1 && k >= h0 && k < h1)) continue;
+    x.beginPath(); x.arc((quiet + k + 0.5) * cs, (quiet + r + 0.5) * cs, cs * 0.42, 0, Math.PI * 2); x.fill();
+  }
+  [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([r, k]) => { // the three corner eyes
+    const ox = (quiet + k) * cs, oy = (quiet + r) * cs;
+    x.fillStyle = acc; rrect(x, ox, oy, 7 * cs, 7 * cs, 2.2 * cs); x.fill();
+    x.fillStyle = "#fff"; rrect(x, ox + cs, oy + cs, 5 * cs, 5 * cs, 1.5 * cs); x.fill();
+    x.fillStyle = acc; rrect(x, ox + 2 * cs, oy + 2 * cs, 3 * cs, 3 * cs, cs); x.fill();
+  });
+  const at = (quiet + h0) * cs, size = hole * cs, s = (size * 0.8) / 35; // the bunny (viewBox 2.5 2 35 35)
+  x.save();
+  x.translate(at + size * 0.1, at + size * 0.1); x.scale(s, s); x.translate(-2.5, -2);
+  x.strokeStyle = acc; x.lineWidth = 3.2; x.lineCap = "round"; x.lineJoin = "round";
+  BUNNY.forEach((d) => x.stroke(new Path2D(d)));
+  x.restore();
+  return c;
+}
+function drawQR() {
   const box = $("#qrbox");
   box.textContent = "";
-  new QRCode(box, { text, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+  box.classList.toggle("styled", QR.style === "styled");
+  const c = QR.style === "styled" ? styledQR(QR.text, 960) : null;
+  if (c) { c.className = "qrc"; box.append(c); }
+  else new QRCode(box, { text: QR.text, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+  document.querySelectorAll("[data-qr]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.qr === QR.style)));
+}
+document.querySelectorAll("[data-qr]").forEach((b) => (b.onclick = () => {
+  QR.style = b.dataset.qr;
+  try { localStorage.setItem("qrstyle", QR.style); } catch {}
+  drawQR();
+}));
+function showQR(text, label) {
+  QR.text = text; QR.label = label;
+  drawQR();
   $("#qrlabel").textContent = label;
   $("#qrd").showModal();
 }
 $("#qrdl").onclick = () => {
-  const src = $("#qrbox canvas") || $("#qrbox img");
-  const c = document.createElement("canvas");
-  c.width = c.height = 272; // 16px white quiet zone so phones scan it reliably
-  const x = c.getContext("2d");
-  x.fillStyle = "#fff"; x.fillRect(0, 0, 272, 272); x.drawImage(src, 16, 16, 240, 240);
   const a = document.createElement("a");
-  a.href = c.toDataURL("image/png"); a.download = "qr.png"; a.click();
+  const styled = $("#qrbox canvas.qrc");
+  if (styled) a.href = styled.toDataURL("image/png"); // 960px, quiet zone included
+  else {
+    const src = $("#qrbox canvas") || $("#qrbox img");
+    const c = document.createElement("canvas");
+    c.width = c.height = 272; // 16px white quiet zone so phones scan it reliably
+    const x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, 272, 272); x.drawImage(src, 16, 16, 240, 240);
+    a.href = c.toDataURL("image/png");
+  }
+  a.download = "qr.png"; a.click();
 };
 $("#qrx").onclick = () => $("#qrd").close();
 

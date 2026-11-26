@@ -104,6 +104,39 @@ async function api(request, env, url) {
     return json({ ok: true });
   }
 
+  // Edit a link: { slug, target?, title?, newSlug? }. A new address moves the link (old one stops working);
+  // created time and folder are kept.
+  if (p === "/_api/edit" && m === "POST") {
+    const b = await request.json().catch(() => ({}));
+    const slug = String(b.slug || "");
+    const { value, metadata } = await env.LINKS.getWithMetadata(slug);
+    if (!slug || slug.startsWith("_") || value === null) return json({ error: "This link no longer exists" }, 404);
+    let target = value;
+    if (b.target !== undefined) {
+      target = String(b.target).trim();
+      try {
+        if (!/^https?:$/.test(new URL(target).protocol)) throw 0;
+      } catch {
+        return json({ error: "Enter a valid link starting with http:// or https://" }, 400);
+      }
+    }
+    let to = slug;
+    if (b.newSlug !== undefined && String(b.newSlug).trim().toLowerCase() !== slug) {
+      to = String(b.newSlug).trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(to)) return json({ error: "Back-half: letters, numbers, - and _ only" }, 400);
+      if (RESERVED.has(to)) return json({ error: "That back-half is reserved" }, 400);
+      if ((await env.LINKS.get(to)) !== null) return json({ error: "That back-half is already taken" }, 409);
+    }
+    const md = { ...(metadata || {}) };
+    if (b.title !== undefined) md.title = String(b.title).trim().slice(0, 80);
+    delete md.target;
+    if (target.length < 700) md.target = target; // KV metadata is capped at 1 KB
+    await env.LINKS.put(to, target, { metadata: md });
+    if (to !== slug) await env.LINKS.delete(slug);
+    const link = { slug: to, title: md.title || "", created: md.created || 0, folder: md.folder || "", target };
+    return json({ ok: true, link, short: "https://" + (env.SHORT_HOST || url.host) + "/" + to });
+  }
+
   if (p === "/_api/delete" && m === "DELETE") {
     const slug = url.searchParams.get("slug");
     if (!slug) return json({ error: "Missing slug" }, 400);

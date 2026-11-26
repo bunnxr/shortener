@@ -57,8 +57,6 @@ label input:focus,.bar input:focus{outline:0;border-color:var(--acc)}
 .pre{display:flex;align-items:baseline;margin-top:4px;border-bottom:1px solid var(--rule)}
 .pre i{font:400 .95rem var(--mono);font-style:normal;color:var(--mute);white-space:nowrap}
 .pre input{border:0;margin:0}
-#msg{min-height:1.5rem;margin-top:18px;font:500 .85rem var(--mono);word-break:break-all}
-#msg.ok{color:var(--acc)}#msg.err{color:var(--bad)}
 main{max-width:760px;margin:0 auto;padding:0 20px 70px}
 .head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:44px 0 12px}
 .head h2{margin:0;font:700 1.35rem var(--umono)}
@@ -86,10 +84,21 @@ main{max-width:760px;margin:0 auto;padding:0 20px 70px}
 dialog{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:26px;text-align:center;box-shadow:var(--shadow-lg)}
 dialog::backdrop{background:var(--backdrop)}
 #qrbox{display:inline-block;padding:14px;background:#fff;border:1px solid var(--line)} /* stays white so phones can scan it */
+#qrbox.styled{padding:0;border-radius:10px;overflow:hidden}
+.qrc{display:block;width:240px;height:240px}
+.qrseg{width:200px;margin:0 auto 16px}
 #qrlabel{margin:12px auto;font:500 .8rem var(--mono);word-break:break-all;max-width:260px}
 dialog .acts{justify-content:center}
 dialog .acts button:first-child{background:var(--ink);color:var(--paper);border:0;border-radius:4px;padding:8px 16px;font:500 .8rem var(--mono)}
-@media(prefers-reduced-motion:reduce){.d,.ear{animation:none;stroke-dashoffset:0}}
+/* toasts (like r2-files): #toasts is a manual popover, so it shows above open dialogs; the popover
+   defaults (centred box, border, background) are undone here */
+#toasts{position:fixed;inset:auto auto max(20px,env(safe-area-inset-bottom)) 50%;transform:translateX(-50%);margin:0;padding:0;border:0;background:transparent;color:inherit;overflow:visible;z-index:80;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(440px,calc(100vw - 24px))}
+.toast{pointer-events:auto;width:100%;padding:12px 16px;border-radius:6px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-left:4px solid var(--acc);box-shadow:var(--shadow-lg);font:500 .85rem/1.45 var(--mono);overflow-wrap:anywhere;opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.toast.in{opacity:1;transform:none}
+.toast.ok{border-left-color:#16a34a}
+.toast.err{border-left-color:var(--bad)}
+@media(max-width:640px){#toasts{inset:max(12px,env(safe-area-inset-top)) auto auto 50%}.toast{transform:translateY(-10px)}}
+@media(prefers-reduced-motion:reduce){.d,.ear{animation:none;stroke-dashoffset:0}.toast{transition:none}}
 @media(max-width:640px){
   .top{padding:20px 16px 16px}
   .word{font-size:1.45rem}
@@ -117,9 +126,6 @@ select option{background:var(--paper);color:var(--ink)}
 .app{display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px;max-width:1120px;margin:0 auto;padding:0 20px 70px;align-items:start}
 .app .sheet{position:sticky;top:20px}
 .app.solo{grid-template-columns:minmax(0,1fr)}
-#fmsg{padding:10px 18px;border-bottom:1px solid var(--line);font:500 .85rem var(--mono);word-break:break-all}
-#fmsg:empty{display:none}
-#fmsg.ok{color:var(--acc)}#fmsg.err{color:var(--bad)}
 .fm{background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);min-height:320px}
 .fm #list{border:0;box-shadow:none;background:none}
 .fmbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
@@ -168,8 +174,9 @@ select option{background:var(--paper);color:var(--ink)}
 .r2chosen{display:flex;align-items:center;gap:10px;margin:0 0 6px;font:400 .82rem var(--mono)}
 .r2chosen span{color:var(--mute)}
 .r2chosen b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.r2msg{min-height:1.3rem;margin:14px 0 0;font:500 .8rem var(--mono);word-break:break-all}
-.r2msg.ok{color:var(--acc)}.r2msg.err{color:var(--bad)}
+.r2note{margin:16px 0 0;font:400 .75rem var(--mono);color:var(--mute)}
+.r2d .acts .pri{background:var(--ink);color:var(--paper);border:0}
+.r2d .acts .pri:hover{background:var(--acc)}
 .r2d .acts{justify-content:flex-end;margin-top:16px}
 .r2d .acts button{background:transparent;border:1px solid var(--line);border-radius:4px;padding:8px 16px;font:500 .8rem var(--mono)}
 .r2d .acts #r2create{background:var(--ink);color:var(--paper);border:0}
