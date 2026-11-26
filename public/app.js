@@ -146,15 +146,19 @@ function merge(d) {
     if (type === "fadd" && !F.includes(v)) F = [...F, v];
     if (type === "fdel") F = F.filter((x) => x !== v);
   }
-  return { links: [...L].sort((a, b) => b.created - a.created), folders: [...F].sort((a, b) => a.localeCompare(b)) };
+  const live = (x) => !(x.exp && x.exp * 1000 <= Date.now()); // expired links disappear without a reload
+  return { links: L.filter(live).sort((a, b) => b.created - a.created), folders: [...F].sort((a, b) => a.localeCompare(b)) };
 }
-function commit(type, v) {
-  try { sessionStorage.setItem("recent", JSON.stringify([...recent(), { type, v, t: Date.now() }])); } catch {}
+// entries: [[type, value], …] remembered together, then one render
+function commitAll(entries) {
+  const t = Date.now();
+  try { sessionStorage.setItem("recent", JSON.stringify([...recent(), ...entries.map(([type, v]) => ({ type, v, t }))])); } catch {}
   data = merge(data);
   render();
 }
+const commit = (type, v) => commitAll([[type, v]]);
 async function load() {
-  try { data = merge(await api("list")); render(); } catch (e) { msg(e.message, false); }
+  try { data = merge(await api("list")); render(); checkDup(); } catch (e) { msg(e.message, false); }
 }
 function open(name) { cur = name; $("#q").value = ""; render(); $("#folder").value = cur === R2ID ? "" : cur; }
 
@@ -165,6 +169,7 @@ document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => {
   $("#title").textContent = qr ? "Generate a QR code" : "Shorten a long link";
   $("#go").textContent = qr ? "Generate QR" : "Shorten URL";
   $("#opts").hidden = qr;
+  checkDup();
 }));
 
 $("#go").onclick = async () => {
@@ -172,14 +177,51 @@ $("#go").onclick = async () => {
   if (!target) return msg("Paste a link first", false);
   if (tab === "qr") return showQR(target, target);
   try {
-    const d = await post("add", { target, title: $("#name").value, slug: $("#slug").value, folder: $("#folder").value });
+    const d = await post("add", { target, title: $("#name").value, slug: $("#slug").value, folder: $("#folder").value, ttl: +$("#exp").value, password: $("#pw").value });
     navigator.clipboard?.writeText(d.short).catch(() => {});
-    msg("Created and copied: " + d.short + (d.link.folder ? " (in " + d.link.folder + ")" : ""), true);
-    ["#url", "#name", "#slug"].forEach((s) => ($(s).value = ""));
+    msg("Created and copied: " + d.short + (d.link.folder ? " (in " + d.link.folder + ")" : "") + (d.link.locked ? ", password-protected" : ""), true);
+    ["#url", "#name", "#slug", "#pw"].forEach((s) => ($(s).value = ""));
+    nameAuto = false;
     commit("add", d.link);
+    checkDup();
   } catch (e) { msg(e.message, false); }
 };
 $("#url").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#go").click(); });
+
+// ---- While typing a link: warn when it is already shortened, and name it after the page's title ----
+// Same link = same host (without www.), path (without a trailing /) and query; http and https count as one.
+const sameLink = (u) => { try { const x = new URL(u.trim()); return x.host.toLowerCase().replace(/^www\./, "") + x.pathname.replace(/\/+$/, "") + x.search; } catch { return ""; } };
+function checkDup() {
+  const box = $("#dup"), key = tab === "link" ? sameLink($("#url").value) : "";
+  const hit = key ? data.links.find((l) => sameLink(l.target) === key) : null;
+  box.textContent = "";
+  box.hidden = !hit;
+  if (!hit) return;
+  const a = el("a", "", HOST + "/" + hit.slug);
+  a.href = shortUrl(hit.slug); a.target = "_blank"; a.rel = "noopener";
+  const cp = el("button", "ghost small", "Copy it");
+  cp.type = "button";
+  cp.onclick = () => navigator.clipboard.writeText(shortUrl(hit.slug)).then(() => msg("Copied " + shortUrl(hit.slug), true));
+  box.append(el("span", "", "Already shortened as "), a, cp, el("small", "", "Shorten again to make a second link."));
+}
+let nameAuto = false, titleSeq = 0, titleTimer = 0; // nameAuto: the name field holds a fetched title, not your typing
+$("#name").addEventListener("input", () => { nameAuto = false; });
+function urlChanged() {
+  checkDup();
+  clearTimeout(titleTimer);
+  const u = $("#url").value.trim(), name = $("#name");
+  if (tab !== "link" || !/^https?:\/\/[^\s/]+\.[^\s]+/i.test(u) || (name.value && !nameAuto)) return;
+  titleTimer = setTimeout(async () => {
+    const seq = ++titleSeq;
+    name.placeholder = "Finding the page title…";
+    try {
+      const d = await api("title?url=" + encodeURIComponent(u));
+      if (seq === titleSeq && $("#url").value.trim() === u && d.title && (!name.value || nameAuto)) { name.value = d.title; nameAuto = true; }
+    } catch {}
+    if (seq === titleSeq) name.placeholder = "Game pack";
+  }, 450);
+}
+$("#url").addEventListener("input", urlChanged);
 $("#q").oninput = render;
 
 $("#nf").onsubmit = async (e) => {
@@ -378,14 +420,21 @@ $("#r2create").onclick = async () => {
   } catch (e) { msg(e.message, false); }
 };
 
-// ---- Edit a short link: name, destination and address (the old address stops working) ----
+// ---- Edit a short link: name, destination, address (the old one stops working), expiry, password ----
 let editing = null;
+const expText = (exp) => (!exp ? "never expires" : exp * 1000 <= Date.now() ? "expired" : "expires in " + inWords(exp - Date.now() / 1000));
 function editLink(l) {
   editing = l;
   $("#edhost").textContent = HOST + "/";
   $("#edname").value = l.title || "";
   $("#edtarget").value = l.target || "";
   $("#edslug").value = l.slug;
+  $("#edexp").value = "";
+  $("#edexp").options[0].textContent = "Keep as is (" + expText(l.exp) + ")";
+  $("#edpw").value = "";
+  $("#edpw").placeholder = l.locked ? "Leave empty to keep the current password" : "None. Type one to protect the link";
+  $("#edpwx").checked = false;
+  $("#edpwxl").hidden = !l.locked;
   $("#edd").showModal();
   $("#edtarget").focus();
 }
@@ -395,6 +444,9 @@ $("#edf").onsubmit = async (e) => {
   const l = editing;
   if (!l) return;
   const body = { slug: l.slug, title: $("#edname").value, target: $("#edtarget").value.trim(), newSlug: $("#edslug").value.trim() || l.slug };
+  if ($("#edexp").value !== "") body.ttl = +$("#edexp").value;
+  if ($("#edpw").value) body.password = $("#edpw").value;
+  else if ($("#edpwx").checked) body.removePassword = true;
   try {
     const d = await post("edit", body);
     $("#edd").close();
@@ -480,7 +532,7 @@ function render() {
     a.href = shortUrl(l.slug); a.target = "_blank"; a.rel = "noopener";
     body.append(el("h3", "", l.title || "/" + l.slug), a, dest(l.target));
     const when = l.created ? new Date(l.created).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
-    const meta = [when, q && l.folder ? "in " + l.folder : ""].filter(Boolean).join("  ");
+    const meta = [when, l.exp ? expText(l.exp) : "", l.locked ? "password-protected" : "", q && l.folder ? "in " + l.folder : ""].filter(Boolean).join("  ·  ");
     if (meta) body.append(el("div", "meta", meta));
     const copy = copyBtn(() => shortUrl(l.slug));
     const qr = ibtn("", "qr", "QR");
@@ -586,8 +638,144 @@ $("#qrdl").onclick = () => {
 };
 $("#qrx").onclick = () => $("#qrd").close();
 
+// ---------------------------------------------------------------------
+//  Backup (Settings → Backup): export every link as JSON or CSV, import either back.
+//  Both keep expiry and password hashes, so protected links stay protected after a restore.
+//  CSV columns: slug,target,title,folder,created,expires,password_hash (dates as ISO text).
+// ---------------------------------------------------------------------
+const CSV_COLS = ["slug", "target", "title", "folder", "created", "expires", "password_hash"];
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const csvCell = (v) => { v = v == null ? "" : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+function toCSV(d) {
+  const iso = (ms) => (ms ? new Date(ms).toISOString() : "");
+  const rows = [CSV_COLS, ...d.links.map((l) => [l.slug, l.target, l.title, l.folder, iso(l.created), iso(l.exp * 1000), l.password_hash])];
+  return "﻿" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n"; // BOM: Excel reads it as UTF-8
+}
+function parseCSV(text) {
+  const rows = [];
+  let row = [], f = "", q = false;
+  text = text.replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch !== '"') f += ch;
+      else if (text[i + 1] === '"') { f += '"'; i++; }
+      else q = false;
+    } else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(f); f = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += ch;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim()));
+}
+// numbers: seconds or milliseconds; text: any date Date.parse understands
+const toMs = (v) => { if (v === "" || v == null) return 0; if (typeof v === "number" || /^\d+$/.test(String(v).trim())) { const n = +v; return n < 1e11 ? n * 1000 : n; } const t = Date.parse(v); return isNaN(t) ? 0 : t; };
+const normLink = (o) => ({ slug: String(o.slug ?? o.short ?? o.alias ?? "").trim(), target: String(o.target ?? o.url ?? o.destination ?? o.link ?? "").trim(), title: String(o.title ?? o.name ?? ""), folder: String(o.folder ?? ""), created: toMs(o.created), exp: Math.floor(toMs(o.exp ?? o.expires) / 1000), password_hash: String(o.password_hash ?? "") });
+function fromJSON(text) {
+  const d = JSON.parse(text), links = Array.isArray(d) ? d : d && Array.isArray(d.links) ? d.links : null;
+  if (!links) throw new Error("there are no links in it");
+  return { links: links.filter((o) => o && typeof o === "object").map(normLink), folders: d && Array.isArray(d.folders) ? d.folders.filter((f) => typeof f === "string") : [] };
+}
+function fromCSV(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error("there are no rows in it");
+  const head = rows[0].map((h) => h.trim().toLowerCase().replace(/[\s-]+/g, "_"));
+  const col = (...names) => head.findIndex((h) => names.includes(h));
+  const at = { slug: col("slug", "short", "alias", "back_half", "code"), target: col("target", "url", "destination", "long_url", "link"), title: col("title", "name"), folder: col("folder", "group"), created: col("created", "created_at", "date"), expires: col("expires", "exp", "expires_at"), password_hash: col("password_hash") };
+  if (at.target < 0) throw new Error("it needs a column named target or url");
+  const get = (r, k) => (at[k] >= 0 ? r[at[k]] : "");
+  return { links: rows.slice(1).map((r) => normLink({ slug: get(r, "slug"), target: get(r, "target"), title: get(r, "title"), folder: get(r, "folder"), created: get(r, "created"), expires: get(r, "expires"), password_hash: get(r, "password_hash") })), folders: [] };
+}
+document.querySelectorAll("[data-export]").forEach((b) => (b.onclick = async () => {
+  setMenu(false);
+  try {
+    const d = await api("export"), day = new Date().toISOString().slice(0, 10);
+    if (b.dataset.export === "json") download("bunnxr-links-" + day + ".json", JSON.stringify(d, null, 2), "application/json");
+    else download("bunnxr-links-" + day + ".csv", toCSV(d), "text/csv");
+    msg("Exported " + d.links.length + (d.links.length === 1 ? " link." : " links."), true);
+  } catch (e) { msg(e.message, false); }
+}));
+$("#impBtn").onclick = () => $("#impf").click();
+$("#impf").onchange = async () => {
+  const file = $("#impf").files[0];
+  $("#impf").value = "";
+  if (!file) return;
+  setMenu(false);
+  let d;
+  try {
+    const text = await file.text();
+    d = /\.csv$/i.test(file.name) || !/^\s*[[{]/.test(text) ? fromCSV(text) : fromJSON(text);
+  } catch (e) { return msg("Could not read " + file.name + ": " + e.message + ".", false); }
+  const links = d.links.filter((l) => l.target);
+  if (!links.length) return msg("No links found in " + file.name + ".", false);
+  if (!confirm("Import " + links.length + (links.length === 1 ? " link" : " links") + " from " + file.name + "?\n\nAddresses you already have are skipped, never overwritten. Each new link uses one of KV's 1,000 free writes per day.")) return;
+  const added = [], folders = [];
+  let skipped = 0, invalid = 0, failed = "";
+  try {
+    for (let i = 0; i < links.length; i += 100) { // the server takes 100 per call
+      const r = await post("import", { links: links.slice(i, i + 100), folders: i === 0 ? d.folders : [] });
+      added.push(...r.added); folders.push(...r.folders); skipped += r.skipped; invalid += r.invalid;
+      if (i + 100 < links.length) toast("Imported " + (i + 100) + " of " + links.length + "…", "info");
+    }
+  } catch (e) { failed = e.message; }
+  if (added.length || folders.length) commitAll([...folders.map((f) => ["fadd", f]), ...added.map((l) => ["add", l])]);
+  const parts = [added.length + (added.length === 1 ? " link imported" : " links imported")];
+  if (skipped) parts.push(skipped + " skipped (address already in use or expired)");
+  if (invalid) parts.push(invalid + " not valid");
+  if (failed) parts.push("stopped: " + failed);
+  msg(parts.join(", ") + ".", !failed && added.length > 0);
+};
+
+// ---------------------------------------------------------------------
+//  Keyboard: "/" search, "n" new link, Esc in the search clears it, and pasting a link anywhere
+//  outside a text field opens the shortener with it.
+// ---------------------------------------------------------------------
+const typing = (t) => !!(t && t.closest && t.closest("input, textarea, select, [contenteditable=''], [contenteditable=true]"));
+function newLink(u) {
+  showSheet(true);
+  if (tab !== "link") $('.tab[data-tab="link"]').click();
+  if (u !== undefined) { $("#url").value = u; urlChanged(); }
+  $("#url").focus();
+}
+document.addEventListener("keydown", (e) => {
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || typing(e.target) || document.querySelector("dialog[open]")) return;
+  if (e.key === "/") { e.preventDefault(); setMenu(false); $("#q").focus(); }
+  else if (e.key === "n" || e.key === "N") { e.preventDefault(); setMenu(false); newLink(); }
+});
+$("#q").addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#q").value) { $("#q").value = ""; render(); } else if (e.key === "Escape") $("#q").blur(); });
+document.addEventListener("paste", (e) => {
+  if (typing(e.target) || document.querySelector("dialog[open]")) return;
+  const t = ((e.clipboardData && e.clipboardData.getData("text")) || "").trim();
+  if (!/^https?:\/\/\S+$/i.test(t)) return;
+  e.preventDefault();
+  newLink(t);
+});
+
+// ---------------------------------------------------------------------
+//  Installed app: links shared to it from the phone's Share menu arrive as /?url=…&text=…&title=…
+//  (Android often puts the link in "text"). They open the shortener, filled in and ready.
+// ---------------------------------------------------------------------
+function takeShared() {
+  const sp = new URLSearchParams(location.search);
+  if (!sp.has("url") && !sp.has("text") && !sp.has("title")) return;
+  history.replaceState(null, "", "/");
+  const hit = [sp.get("url"), sp.get("text"), sp.get("title")].map((s) => (s || "").match(/https?:\/\/[^\s"'<>]+/i)).find(Boolean);
+  if (!hit) return msg("The shared item has no link in it.", false);
+  const title = (sp.get("title") || "").trim();
+  if (title && !/^https?:\/\//i.test(title)) { $("#name").value = title.slice(0, 80); nameAuto = true; }
+  newLink(hit[0]);
+}
+if ("serviceWorker" in navigator) addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+
 api("config").then((c) => { HOST = c.host; $("#host").textContent = HOST + "/"; R2.on = !!c.r2; }).catch(() => {}).then(() => {
   load();
+  takeShared();
   if (!R2.on) return;
   loadR2();
   // which other drives (Zenith) r2-files can link files from; without it the picker shows R2 only

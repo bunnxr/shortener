@@ -11,6 +11,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="bunnxr links">
 </head>
 <body>
 <header class="top">
@@ -29,6 +34,12 @@
       <div class="seg" role="group" aria-label="Theme"><button type="button" data-set="theme" data-val="dark">Dark</button><button type="button" data-set="theme" data-val="light">Light</button></div>
       <p class="setlbl">Icons</p>
       <div class="seg" role="group" aria-label="Icons"><button type="button" data-set="icons" data-val="on">Show</button><button type="button" data-set="icons" data-val="off">Hide</button></div>
+      <p class="setlbl">Backup</p>
+      <div class="setbtns"><button type="button" data-export="json">Export JSON</button><button type="button" data-export="csv">Export CSV</button></div>
+      <button type="button" class="setwide" id="impBtn">Import JSON or CSV…</button>
+      <input id="impf" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+      <p class="setlbl">Shortcuts</p>
+      <p class="sethelp"><kbd>/</kbd> search &nbsp;·&nbsp; <kbd>n</kbd> new link<br>Paste a link anywhere on the page to shorten it</p>
     </div>
   </div>
 </header>
@@ -43,12 +54,15 @@
       <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Place your long link here">
       <button id="go">Shorten URL</button>
     </div>
+    <div id="dup" class="dup" role="status" hidden></div>
     <details id="opts" open>
       <summary>Name and customize</summary>
       <div class="grid">
         <label>Link name<input id="name" maxlength="80" placeholder="Game pack"></label>
         <label>Slug<span class="pre"><i id="host"></i><input id="slug" placeholder="xyz"></span></label>
         <label>Folder<select id="folder"><option value="">Home (no folder)</option></select></label>
+        <label>Works for<select id="exp"><option value="0">Never expires</option><option value="3600">1 hour</option><option value="86400">1 day</option><option value="604800">7 days</option><option value="2592000">30 days</option><option value="7776000">90 days</option><option value="31536000">1 year</option></select></label>
+        <label>Password<input id="pw" type="password" autocomplete="new-password" placeholder="optional: visitors must enter it"></label>
       </div>
     </details>
   </section>
@@ -75,6 +89,9 @@
       <label>Link name<input id="edname" maxlength="80" placeholder="Game pack" autocomplete="off"></label>
       <label>Destination<input id="edtarget" type="url" inputmode="url" autocomplete="off" spellcheck="false" required></label>
       <label>Address<span class="pre"><i id="edhost"></i><input id="edslug" maxlength="64" autocomplete="off" spellcheck="false"></span></label>
+      <label>Works for<select id="edexp"><option value="">Keep as is</option><option value="0">Never expires</option><option value="3600">1 hour from now</option><option value="86400">1 day from now</option><option value="604800">7 days from now</option><option value="2592000">30 days from now</option><option value="7776000">90 days from now</option><option value="31536000">1 year from now</option></select></label>
+      <label>Password<input id="edpw" type="password" autocomplete="new-password"></label>
+      <label class="check" id="edpwxl"><input id="edpwx" type="checkbox"> Remove the password</label>
     </div>
     <p class="r2note">Changing the address moves the link. The old address stops working.</p>
     <div class="acts"><button type="submit" class="pri">Save</button><button id="edx" class="ghost" type="button">Cancel</button></div>
